@@ -300,3 +300,35 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .quest { animation: none; }
 }
+
+/* ---------- Créatures ---------- */
+.rar {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.03em;
+  color: #fff;
+  background: var(--rc);
+  vertical-align: 2px;
+}
+.unit.egg { background: linear-gradient(135deg, #fff6d6, #efe4ff); border-color: #b49bff; }
+.bestiary { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.beast {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 8px 4px 6px;
+  border-radius: 14px;
+  background: #fffdf6;
+  border: 2px solid var(--rc);
+  box-shadow: inset 0 -4px 0 color-mix(in srgb, var(--rc) 25%, transparent);
+  text-align: center;
+}
+.beast .e { font-family: var(--emoji); font-size: 30px; line-height: 1.1; }
+.beast b { font-size: 11px; line-height: 1.2; }
+.beast .meta { font-size: 10px; color: var(--ink-soft); }
+.beast .own {
+  position: absolute; top: 4px; right: 6px;
+  font-size: 10px; font-weight: 800; color: var(--rc);
+}
+.beast.unknown .e { filter: brightness(0) opacity(0.35); }
+.beast.unknown b { color: var(--ink-soft); }

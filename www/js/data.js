@@ -68,6 +68,12 @@ window.EE_DATA = {
       cost: { gold: 150, wood: 50 }, time: 25, xp: 30, trains: true,
       max: [0, 1, 1, 1, 2, 2, 2, 3, 3, 3],
     },
+    den: {
+      name: 'Antre des créatures', icon: '🥚', size: 3, h: 60, cat: 'war',
+      desc: 'Invoque et abrite des créatures magiques. Chaque Antre donne +6 places dans ton armée.',
+      cost: { gold: 400, wood: 120, stone: 80 }, time: 40, xp: 40, summons: true, pop: 6,
+      max: [0, 0, 1, 1, 1, 2, 2, 2, 3, 3],
+    },
     tower: {
       name: 'Tour de guet', icon: '🗼', size: 1, h: 80, cat: 'war',
       desc: 'Chaque tour donne +5 % d’attaque à ton armée.',
@@ -99,6 +105,45 @@ window.EE_DATA = {
     archer: { name: 'Archère', icon: '🏹', atk: 9, hp: 22, cost: { food: 25, gold: 30, wood: 10 }, time: 10, unlock: 3 },
     knight: { name: 'Chevalier', icon: '🐎', atk: 14, hp: 80, cost: { food: 60, gold: 70, stone: 10 }, time: 18, unlock: 4 },
     mage: { name: "Mage d'éclat", icon: '🔮', atk: 30, hp: 35, cost: { food: 50, gold: 120, stone: 20 }, time: 25, unlock: 5 },
+
+    // --- Créatures (invoquées à l'Antre). pop = places occupées dans l'armée ; req = repaire à vaincre avant ---
+    rabbit: { monster: true, rarity: 'common', name: 'Lapin-éclair', icon: '🐇', atk: 12, hp: 40, pop: 2, cost: { food: 60, gold: 50 }, time: 20, unlock: 3,
+      desc: 'Si rapide qu’il laisse une traînée d’étincelles.' },
+    shroom: { monster: true, rarity: 'common', name: 'Champignon sauteur', icon: '🍄', atk: 8, hp: 75, pop: 2, cost: { food: 50, gold: 60 }, time: 20, unlock: 3,
+      desc: 'Rebondit sur ses ennemis et encaisse les coups.' },
+    ladybug: { monster: true, rarity: 'common', name: 'Coccinelle titan', icon: '🐞', atk: 11, hp: 60, pop: 2, cost: { food: 70, gold: 60 }, time: 25, unlock: 3,
+      desc: 'Sa carapace porte bonheur… sauf aux Ombres.' },
+    wolf: { monster: true, rarity: 'rare', name: "Loup d'aurore", icon: '🐺', atk: 24, hp: 95, pop: 3, cost: { food: 140, gold: 150 }, time: 45, unlock: 4,
+      desc: 'Il hurle quand le soleil se lève sur l’île.' },
+    owl: { monster: true, rarity: 'rare', name: 'Hibou des étoiles', icon: '🦉', atk: 30, hp: 60, pop: 3, cost: { food: 120, gold: 180 }, time: 45, unlock: 4,
+      desc: 'Ses plumes reflètent la voie lactée.' },
+    turtle: { monster: true, rarity: 'rare', name: 'Tortue-rocher', icon: '🐢', atk: 12, hp: 240, pop: 3, cost: { food: 150, gold: 120, stone: 60 }, time: 50, unlock: 4,
+      desc: 'Une forteresse vivante. Rien ne la fait reculer.' },
+    bat: { monster: true, rarity: 'rare', name: 'Chauve-souris apprivoisée', icon: '🦇', atk: 26, hp: 70, pop: 3, cost: { food: 120, gold: 140 }, time: 40, unlock: 3, req: 1,
+      desc: 'Une ancienne servante des Ombres, libérée par ta victoire.' },
+    unicorn: { monster: true, rarity: 'epic', name: "Licorne d'éclat", icon: '🦄', atk: 48, hp: 170, pop: 4, cost: { food: 300, gold: 400, gems: 2 }, time: 90, unlock: 5,
+      desc: 'Sa corne est un cristal pur qui soigne ses alliés.' },
+    griffin: { monster: true, rarity: 'epic', name: 'Griffon céleste', icon: '🦅', atk: 58, hp: 140, pop: 4, cost: { food: 280, gold: 450, gems: 2 }, time: 90, unlock: 5,
+      desc: 'Il fond sur ses proies depuis les nuages.' },
+    golem: { monster: true, rarity: 'epic', name: 'Golem apprivoisé', icon: '🗿', atk: 32, hp: 420, pop: 5, cost: { food: 200, gold: 300, stone: 200 }, time: 100, unlock: 4, req: 2,
+      desc: 'Le Golem de cendre, purifié, protège désormais ton royaume.' },
+    ghost: { monster: true, rarity: 'epic', name: 'Spectre bienveillant', icon: '👻', atk: 62, hp: 110, pop: 4, cost: { food: 250, gold: 400, gems: 3 }, time: 90, unlock: 5, req: 3,
+      desc: 'Une âme apaisée qui veut réparer le mal des brumes.' },
+    kraken: { monster: true, rarity: 'legend', name: 'Kraken des nuages', icon: '🐙', atk: 95, hp: 320, pop: 6, cost: { food: 600, gold: 900, gems: 6 }, time: 180, unlock: 6,
+      desc: 'Il nage dans le ciel et broie les tours ennemies.' },
+    dragon: { monster: true, rarity: 'legend', name: 'Dragon de cristal', icon: '🐲', atk: 125, hp: 400, pop: 7, cost: { food: 800, gold: 1200, gems: 8 }, time: 240, unlock: 6, req: 4,
+      desc: 'Né d’un éclat éternel, il est l’ennemi juré du Dragon d’obsidienne.' },
+  },
+
+  // Œuf mystère : donne une créature au hasard (même une qui n'est pas encore débloquée)
+  EGG: { name: 'Œuf mystère', icon: '🥚', cost: { gems: 8 }, time: 60, pop: 2,
+    weights: { common: 60, rare: 28, epic: 10, legend: 2 } },
+
+  RARITY: {
+    common: { name: 'Commune', color: '#7d8a96' },
+    rare: { name: 'Rare', color: '#2f80ed' },
+    epic: { name: 'Épique', color: '#9b51e0' },
+    legend: { name: 'Légendaire', color: '#e0a100' },
   },
 
   CAMPS: [

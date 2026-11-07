@@ -70,8 +70,8 @@
       res: Object.assign({}, D.START),
       xp: 0, level: 1,
       army: {}, objects: [], nextId: 1,
-      stats: { collects: 0, trained: 0, cleared: 0, wins: 0 },
-      beaten: [], quest: 0,
+      stats: { collects: 0, trained: 0, cleared: 0, wins: 0, summoned: 0 },
+      beaten: [], quest: 0, discovered: [],
     };
     addObj({ type: 'b', kind: 'castle', gx: 10, gy: 10, size: 3, built: true, doneAt: 0, readyAt: now() + B.castle.produce.time * 1000 });
     D.CAMPS.forEach((c, i) => addObj({ type: 'camp', camp: i, gx: c.gx, gy: c.gy, size: 2 }));
@@ -98,7 +98,9 @@
       const d = JSON.parse(raw);
       if (!d || d.v !== 1 || !Array.isArray(d.objects)) return false;
       S = d;
-      S.stats = Object.assign({ collects: 0, trained: 0, cleared: 0, wins: 0 }, S.stats);
+      S.stats = Object.assign({ collects: 0, trained: 0, cleared: 0, wins: 0, summoned: 0 }, S.stats);
+      S.discovered = Array.isArray(S.discovered) ? S.discovered : [];
+      for (const k of Object.keys(S.army)) if (!D.UNITS[k]) delete S.army[k];
       S.army = S.army || {};
       S.beaten = S.beaten || [];
       for (const k of Object.keys(D.RES)) S.res[k] = Number(S.res[k]) || 0;
@@ -158,14 +160,38 @@
     return B.castle.storage + countBuilt('storage') * B.storage.storage;
   }
   function popCap() {
-    return B.castle.pop + countBuilt('house') * B.house.pop;
+    return B.castle.pop + countBuilt('house') * B.house.pop + countBuilt('den') * B.den.pop;
   }
-  function armySize() {
+  // Une unité, une créature ou l'œuf mystère
+  const unitDef = (k) => (k === 'egg' ? D.EGG : D.UNITS[k]);
+  const popOf = (k) => unitDef(k).pop || 1;
+  function armyCount() {
     return Object.values(S.army).reduce((a, b) => a + b, 0);
   }
-  function queuedSize() {
-    return buildings().reduce((n, b) => n + (b.queue ? b.queue.length : 0), 0);
+  // Places occupées (une créature peut prendre plusieurs places)
+  function armySize() {
+    return Object.entries(S.army).reduce((n, [k, c]) => n + c * popOf(k), 0);
   }
+  function queuedSize() {
+    return buildings().reduce((n, b) => n + (b.queue ? b.queue.reduce((m, q) => m + popOf(q.unit), 0) : 0), 0);
+  }
+  // Pourquoi une unité ne peut pas (encore) être entraînée ; null si c'est possible
+  function lockReason(k) {
+    const u = unitDef(k);
+    if (u.unlock && S.level < u.unlock) return `Niv. ${u.unlock}`;
+    if (u.req != null && !S.beaten.includes(u.req)) return 'Bloqué';
+    return null;
+  }
+  function rollEgg() {
+    const w = D.EGG.weights;
+    const total = Object.values(w).reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    let rarity = 'common';
+    for (const [k, v] of Object.entries(w)) { if ((r -= v) < 0) { rarity = k; break; } }
+    const pool = Object.keys(D.UNITS).filter((k) => D.UNITS[k].monster && D.UNITS[k].rarity === rarity);
+    return pool[(Math.random() * pool.length) | 0];
+  }
+  const monsterKeys = () => Object.keys(D.UNITS).filter((k) => D.UNITS[k].monster);
   function towerBonus() {
     return 1 + countBuilt('tower') * B.tower.bonus;
   }
@@ -194,7 +220,8 @@
       S.level++;
       S.res.gems += 2;
       const unlocked = Object.keys(B).filter((k) => B[k].max && unlockLevel(k) === S.level).map((k) => B[k].name);
-      const units = Object.keys(D.UNITS).filter((k) => D.UNITS[k].unlock === S.level).map((k) => D.UNITS[k].name);
+      const units = Object.keys(D.UNITS).filter((k) => !D.UNITS[k].monster && D.UNITS[k].unlock === S.level).map((k) => D.UNITS[k].name);
+      if (Object.values(D.UNITS).some((u) => u.monster && u.unlock === S.level)) units.push('nouvelles créatures');
       const news = unlocked.concat(units);
       toast(`🎉 Niveau ${S.level} ! +2 💎${news.length ? ' · Nouveau : ' + news.join(', ') : ''}`, 4000);
     }
@@ -235,9 +262,12 @@
 
   // --- Armée ---
   function trainUnit(b, k) {
-    const u = D.UNITS[k];
-    if (S.level < u.unlock || !canAfford(u.cost)) return;
-    if (armySize() + queuedSize() >= popCap()) { toast('🏠 Plus de place ! Construis des Chaumières pour agrandir ton armée.'); return; }
+    const u = unitDef(k);
+    if (lockReason(k) || !canAfford(u.cost)) return;
+    if (armySize() + queuedSize() + popOf(k) > popCap()) {
+      toast('🏠 Plus de place ! Construis des Chaumières ou un Antre pour agrandir ton armée.');
+      return;
+    }
     pay(u.cost);
     b.queue = b.queue || [];
     const start = b.queue.length ? b.queue[b.queue.length - 1].endAt : now();
@@ -251,11 +281,25 @@
       if (!b.queue || !b.queue.length) continue;
       while (b.queue.length && b.queue[0].endAt <= t) {
         const q = b.queue.shift();
-        S.army[q.unit] = (S.army[q.unit] || 0) + 1;
-        S.stats.trained++;
+        const key = q.unit === 'egg' ? rollEgg() : q.unit;
+        const u = D.UNITS[key];
+        S.army[key] = (S.army[key] || 0) + 1;
         const c = objCenter(b);
-        floater(`${D.UNITS[q.unit].icon} +1`, c[0], c[1] - 60);
-        addXp(3);
+        floater(`${u.icon} +1`, c[0], c[1] - 60);
+        if (u.monster) {
+          S.stats.summoned++;
+          if (!S.discovered.includes(key)) {
+            S.discovered.push(key);
+            toast(`${q.unit === 'egg' ? '🥚 L’œuf éclot ! ' : ''}Nouvelle créature ${D.RARITY[u.rarity].name.toLowerCase()} : ${u.icon} ${u.name} !`, 3500);
+          } else if (q.unit === 'egg') {
+            toast(`🥚 L’œuf éclot : ${u.icon} ${u.name} !`);
+          }
+          addXp(5);
+        } else {
+          S.stats.trained++;
+          addXp(3);
+        }
+        sparkle(c[0], c[1] - 50, 12);
       }
     }
   }
@@ -277,12 +321,15 @@
     { text: 'Atteins le niveau 3', goal: () => [S.level, 3], reward: { gems: 2 }, xp: 0 },
     { text: 'Construis une Carrière', goal: () => [countBuilt('quarry'), 1], reward: { gold: 150 }, xp: 25 },
     { text: 'Construis un Entrepôt', goal: () => [countBuilt('storage'), 1], reward: { stone: 60 }, xp: 30 },
+    { text: 'Construis un Antre des créatures', goal: () => [countBuilt('den'), 1], reward: { gems: 3 }, xp: 40 },
+    { text: 'Invoque ta première créature', goal: () => [S.stats.summoned, 1], reward: { gems: 4 }, xp: 30 },
     { text: "Libère 2 repaires d'ombre", goal: () => [S.beaten.length, 2], reward: { gems: 3 }, xp: 30 },
     { text: 'Atteins le niveau 4', goal: () => [S.level, 4], reward: { gold: 300 }, xp: 0 },
     { text: 'Construis une Tour de guet', goal: () => [countBuilt('tower'), 1], reward: { stone: 100 }, xp: 30 },
     { text: "Libère 3 repaires d'ombre", goal: () => [S.beaten.length, 3], reward: { gems: 4 }, xp: 40 },
     { text: 'Atteins le niveau 5', goal: () => [S.level, 5], reward: { gold: 500 }, xp: 0 },
     { text: "Construis un Sanctuaire d'éclats", goal: () => [countBuilt('shrine'), 1], reward: { gems: 5 }, xp: 50 },
+    { text: 'Découvre 6 créatures du Bestiaire', goal: () => [S.discovered.length, 6], reward: { gems: 8 }, xp: 60 },
     { text: "Libère 5 repaires d'ombre", goal: () => [S.beaten.length, 5], reward: { gems: 5 }, xp: 80 },
     { text: "Terrasse le Dragon d'obsidienne", goal: () => [S.beaten.includes(5) ? 1 : 0, 1], reward: { gems: 25 }, xp: 200 },
   ];
@@ -382,6 +429,7 @@
     ctx.font = `${size}px ${EMOJI_FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000'; // les emojis en couleur héritent de l'opacité du remplissage
     ctx.fillText(ch, x, y);
   }
   function circle(x, y, r, fill) {
@@ -611,6 +659,37 @@
         poly([[a[0], a[1] - 26], [a[0] + 18, a[1] - 22 + wave], [a[0], a[1] - 16]], '#e53935');
         break;
       }
+      case 'den': {
+        // Colline moussue creusée d'une grotte, avec des œufs lumineux
+        const f = foot(gx, gy, 3, 0.2);
+        box(f, 6, '#7d6a52', '#5f4f3c', '#6e9b4f');
+        const a = pyramid(f, 6, 46, '#8a9a6a', '#66774c', '#55653e');
+        const m = lerp(up(f.l, 6), up(f.b, 6), 0.5);
+        ctx.fillStyle = '#2b1d2e';
+        ctx.beginPath();
+        ctx.moveTo(m[0] - 16, m[1] - 2);
+        ctx.quadraticCurveTo(m[0] - 14, m[1] - 34, m[0] + 2, m[1] - 32);
+        ctx.quadraticCurveTo(m[0] + 14, m[1] - 28, m[0] + 14, m[1] + 6);
+        ctx.closePath();
+        ctx.fill();
+        const glow = 0.5 + 0.5 * Math.sin(t * 2.5);
+        circle(m[0], m[1] - 12, 8, `rgba(190,140,255,${0.25 + glow * 0.3})`);
+        emoji('👀', m[0] - 1, m[1] - 16, 11);
+        const eggs = [[-30, 4, '#ffe08a'], [-20, 10, '#9fe8ff'], [-38, 12, '#ffb3e6']];
+        for (const [dx, dy, col] of eggs) {
+          const ex = f.b[0] + dx + 10, ey = f.b[1] + dy - 14;
+          ctx.save();
+          ctx.shadowColor = col; ctx.shadowBlur = 8 + glow * 8;
+          ctx.fillStyle = col;
+          ctx.beginPath(); ctx.ellipse(ex, ey, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          circle(ex - 1.5, ey - 2, 1.3, 'rgba(255,255,255,.8)');
+        }
+        // Champignons et mousse au sommet
+        circle(a[0] - 4, a[1] + 10, 5, '#5c8a3e');
+        circle(a[0] + 6, a[1] + 14, 4, '#4f7a35');
+        break;
+      }
       case 'storage': {
         const f = foot(gx, gy, 2, 0.22);
         box(f, 24, '#c08a52', '#985f2f', '#d39d64');
@@ -676,6 +755,27 @@
     }
   }
 
+  // Les créatures de l'armée se promènent autour de leur Antre
+  function drawRoamingMonsters(t) {
+    const dens = S.objects.filter((o) => o.type === 'b' && o.kind === 'den' && o.built && !(placing && placing.move === o));
+    if (!dens.length) return;
+    const beasts = [];
+    for (const k of monsterKeys()) for (let i = 0; i < (S.army[k] || 0); i++) beasts.push(k);
+    const shown = beasts.slice(0, dens.length * 8);
+    shown.forEach((k, i) => {
+      const den = dens[i % dens.length];
+      const seed = hash(i, den.id);
+      const cx = den.gx + 1.5, cy = den.gy + 1.5;
+      const ang = t * (0.12 + seed * 0.1) * (seed > 0.5 ? 1 : -1) + seed * 20;
+      const rad = 1.9 + Math.sin(t * 0.4 + i) * 0.3;
+      const [x, y] = P(cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad);
+      const hop = Math.abs(Math.sin(t * 5 + i * 1.7)) * 5;
+      ctx.fillStyle = 'rgba(0,0,0,.18)';
+      ctx.beginPath(); ctx.ellipse(x, y, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+      emoji(D.UNITS[k].icon, x, y - 14 - hop, 28);
+    });
+  }
+
   function drawBubble(o, t) {
     const def = B[o.kind];
     const c = objCenter(o);
@@ -694,7 +794,7 @@
   function drawQueueBadge(o, t) {
     const c = objCenter(o);
     const q = o.queue[0];
-    const u = D.UNITS[q.unit];
+    const u = unitDef(q.unit);
     const x = c[0], y = c[1] - B[o.kind].h - 22;
     circle(x, y, 13, 'rgba(255,250,240,.95)');
     emoji(u.icon, x, y + 1, 15);
@@ -745,6 +845,7 @@
       else if (!o.built) drawConstruction(o);
       else drawBuilding(o, t);
     }
+    drawRoamingMonsters(t);
     for (const o of objs) {
       if (o.type !== 'b' || !o.built) continue;
       if (placing && placing.move === o) continue;
@@ -1110,13 +1211,26 @@
     if (o.kind === 'house') html += `<p>+${def.pop} places dans ton armée.</p>`;
     if (o.kind === 'storage') html += `<p>+${fmt(def.storage)} de réserve par ressource (total : ${fmt(storageCap())}).</p>`;
     if (o.kind === 'tower') html += `<p>Bonus d'attaque actuel : <b>+${Math.round((towerBonus() - 1) * 100)} %</b></p>`;
-    if (def.trains) {
-      html += `<h3>Entraîner des soldats</h3><p>Armée : <b id="shArmy"></b> · <span id="shQueue" class="muted"></span></p><div class="units">`;
-      for (const [k, u] of Object.entries(D.UNITS)) {
-        const locked = S.level < u.unlock;
-        html += `<div class="unit"><span class="e">${u.icon}</span><div class="info"><b>${u.name}</b>
-          <div class="meta">⚔️ ${u.atk} · ❤️ ${u.hp} · ⏱ ${fmtTime(u.time)}</div>${costHtml(u.cost, false)}</div>
-          <button class="btn ok" type="button" data-act="train" data-unit="${k}" ${locked ? 'disabled' : ''}>${locked ? `Niv. ${u.unlock}` : 'Entraîner'}</button></div>`;
+    if (def.trains || def.summons) {
+      const list = Object.keys(D.UNITS).filter((k) => !!D.UNITS[k].monster === !!def.summons);
+      html += def.summons
+        ? `<h3>Invoquer des créatures</h3><p>Bestiaire : <b>${S.discovered.length}/${monsterKeys().length}</b> découvertes · Armée : <b id="shArmy"></b><br><span id="shQueue" class="muted"></span></p><div class="units">`
+        : `<h3>Entraîner des soldats</h3><p>Armée : <b id="shArmy"></b> · <span id="shQueue" class="muted"></span></p><div class="units">`;
+      if (def.summons) {
+        const e = D.EGG;
+        html += `<div class="unit egg"><span class="e">${e.icon}</span><div class="info"><b>${e.name}</b>
+          <div class="meta">Une créature au hasard, même une rare que tu n'as pas encore débloquée ! · ⏱ ${fmtTime(e.time)}</div>${costHtml(e.cost, false)}</div>
+          <button class="btn gem" type="button" data-act="train" data-unit="egg">Faire éclore</button></div>`;
+      }
+      for (const k of list) {
+        const u = D.UNITS[k];
+        const lock = lockReason(k);
+        const rar = u.monster ? `<span class="rar" style="--rc:${D.RARITY[u.rarity].color}">${D.RARITY[u.rarity].name}</span>` : '';
+        const reqTxt = u.req != null && !S.beaten.includes(u.req) ? `<div class="meta">🔒 Bats « ${D.CAMPS[u.req].name} » pour l'apprivoiser</div>` : '';
+        const popTxt = u.pop ? ` · 👥 ${u.pop}` : '';
+        html += `<div class="unit"><span class="e">${u.icon}</span><div class="info"><b>${u.name}</b> ${rar}
+          <div class="meta">⚔️ ${u.atk} · ❤️ ${u.hp}${popTxt} · ⏱ ${fmtTime(u.time)}</div>${reqTxt}${costHtml(u.cost, false)}</div>
+          <button class="btn ok" type="button" data-act="train" data-unit="${k}" ${lock ? 'disabled' : ''}>${lock || (u.monster ? 'Invoquer' : 'Entraîner')}</button></div>`;
       }
       html += '</div>';
     }
@@ -1128,13 +1242,14 @@
         $('shState').innerHTML = ready ? '<b>Prêt !</b> Touche le bâtiment pour récolter.' : `Prochaine récolte dans <b>${fmtTime(left)}</b>`;
         $('shBar').style.width = `${ready ? 100 : clamp(1 - left / def.produce.time, 0, 1) * 100}%`;
       }
-      if (def.trains) {
-        $('shArmy').textContent = `${armySize()}/${popCap()}`;
+      if (def.trains || def.summons) {
+        $('shArmy').textContent = `${armySize()}/${popCap()} places`;
         const q = o.queue || [];
-        $('shQueue').textContent = q.length ? `En formation : ${q.map((x) => D.UNITS[x.unit].icon).join(' ')} (${fmtTime((q[0].endAt - now()) / 1000)})` : 'Aucun soldat en formation';
+        const verb = def.summons ? 'En invocation' : 'En formation';
+        $('shQueue').textContent = q.length ? `${verb} : ${q.map((x) => unitDef(x.unit).icon).join(' ')} (${fmtTime((q[0].endAt - now()) / 1000)})` : (def.summons ? 'Aucune invocation en cours' : 'Aucun soldat en formation');
         sheetBody.querySelectorAll('[data-act="train"]').forEach((btn) => {
-          const u = D.UNITS[btn.dataset.unit];
-          btn.disabled = S.level < u.unlock || !canAfford(u.cost) || armySize() + queuedSize() >= popCap();
+          const k = btn.dataset.unit;
+          btn.disabled = !!lockReason(k) || !canAfford(unitDef(k).cost) || armySize() + queuedSize() + popOf(k) > popCap();
         });
       }
     });
@@ -1193,11 +1308,24 @@
     selectedId = null;
     const a = armyStats();
     let html = `<h2><span class="e">⚔️</span>Armée</h2>
-      <div class="stats"><div><span>Soldats</span><b>${armySize()}/${popCap()}</b></div><div><span>Attaque</span><b>${fmt(a.atk)}</b></div><div><span>Vie</span><b>${fmt(a.hp)}</b></div></div><div class="units" style="margin-top:10px">`;
+      <div class="stats"><div><span>Places</span><b>${armySize()}/${popCap()}</b></div><div><span>Attaque</span><b>${fmt(a.atk)}</b></div><div><span>Vie</span><b>${fmt(a.hp)}</b></div></div>
+      <h3>Soldats</h3><div class="units">`;
     for (const [k, u] of Object.entries(D.UNITS)) {
+      if (u.monster) continue;
       html += `<div class="unit"><span class="e">${u.icon}</span><div class="info"><b>${u.name}</b><div class="meta">⚔️ ${u.atk} · ❤️ ${u.hp}${S.level < u.unlock ? ` · débloqué au niveau ${u.unlock}` : ''}</div></div><b>× ${S.army[k] || 0}</b></div>`;
     }
-    html += `</div><h3>Repaires d'ombre</h3><div class="units">`;
+    html += `</div><h3>Bestiaire · ${S.discovered.length}/${monsterKeys().length}</h3><div class="bestiary">`;
+    for (const k of monsterKeys()) {
+      const u = D.UNITS[k];
+      const known = S.discovered.includes(k);
+      const rc = D.RARITY[u.rarity].color;
+      html += known
+        ? `<div class="beast" style="--rc:${rc}" title="${u.desc}"><span class="e">${u.icon}</span><b>${u.name}</b><span class="meta">⚔️ ${u.atk} · ❤️ ${u.hp}</span><span class="own">× ${S.army[k] || 0}</span></div>`
+        : `<div class="beast unknown" style="--rc:${rc}"><span class="e">${u.icon}</span><b>???</b><span class="meta">${D.RARITY[u.rarity].name}</span></div>`;
+    }
+    html += '</div>';
+    if (!countKind('den')) html += `<p class="muted">Construis un Antre des créatures (niveau 3) pour invoquer des monstres.</p>`;
+    html += `<h3>Repaires d'ombre</h3><div class="units">`;
     D.CAMPS.forEach((c, i) => {
       const done = S.beaten.includes(i);
       html += `<div class="unit"><span class="e">${done ? '✨' : c.icon}</span><div class="info"><b>${c.name}</b><div class="meta">${done ? 'Terres libérées' : `⚔️ ${c.atk} · ❤️ ${fmt(c.hp)}`}</div></div>
