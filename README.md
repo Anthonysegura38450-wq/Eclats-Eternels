@@ -28,7 +28,8 @@ python3 -m http.server 8000
 www/index.html     page du jeu
 www/css/style.css  interface
 www/js/data.js     données et équilibrage (bâtiments, soldats, ennemis, coûts)
-www/js/game.js     moteur : carte, rendu, interactions, batailles, quêtes
+www/js/art.js      graphismes dessinés par le code (bâtiments, décor, créatures, icônes)
+www/js/game.js     moteur : carte, interactions, batailles, quêtes
 ```
 
 Le dossier `www/` est prêt à être emballé avec Capacitor pour publier le jeu sur Google Play et l'App Store.
