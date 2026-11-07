@@ -147,19 +147,22 @@ window.EE_DATA = {
   },
 
   CAMPS: [
-    { name: "Rôdeurs d'ombre", icon: '👺', gx: 4, gy: 15, atk: 6, hp: 60, loot: { gold: 150, wood: 40 }, gems: 2, xp: 40,
+    { name: "Rôdeurs d'ombre", place: 'Île des Ronces', icon: '👺', gx: 4, gy: 15, atk: 6, hp: 60, loot: { gold: 150, wood: 40 }, gems: 2, xp: 40,
       desc: 'Des bandits corrompus par les Ombres qui pillent les champs.' },
-    { name: 'Nuée des ailes noires', icon: '🦇', gx: 17, gy: 5, atk: 14, hp: 160, loot: { gold: 300, wood: 80, stone: 40 }, gems: 3, xp: 80,
+    { name: 'Nuée des ailes noires', place: 'Pic des Ailes noires', icon: '🦇', gx: 17, gy: 5, atk: 14, hp: 160, loot: { gold: 300, wood: 80, stone: 40 }, gems: 3, xp: 80,
       desc: 'Des chauves-souris géantes nichées dans une tour en ruine.' },
-    { name: 'Golem de cendre', icon: '👹', gx: 18, gy: 17, atk: 28, hp: 350, loot: { gold: 600, stone: 150 }, gems: 4, xp: 150,
+    { name: 'Golem de cendre', place: 'Forge de Cendre', icon: '👹', gx: 18, gy: 17, atk: 28, hp: 350, loot: { gold: 600, stone: 150 }, gems: 4, xp: 150,
       desc: 'Un colosse de roche brûlante réveillé par un éclat noir.' },
-    { name: 'Spectres des brumes', icon: '👻', gx: 2, gy: 3, atk: 45, hp: 700, loot: { gold: 1000, food: 300 }, gems: 5, xp: 250,
+    { name: 'Spectres des brumes', place: 'Îlot des Brumes', icon: '👻', gx: 2, gy: 3, atk: 45, hp: 700, loot: { gold: 1000, food: 300 }, gems: 5, xp: 250,
       desc: 'Des âmes perdues qui glacent le sang des soldats.' },
-    { name: 'Seigneur liche', icon: '💀', gx: 3, gy: 20, atk: 75, hp: 1300, loot: { gold: 1800, wood: 400, stone: 400 }, gems: 8, xp: 400,
+    { name: 'Seigneur liche', place: 'Nécropole flottante', icon: '💀', gx: 3, gy: 20, atk: 75, hp: 1300, loot: { gold: 1800, wood: 400, stone: 400 }, gems: 8, xp: 400,
       desc: 'Un ancien mage qui a vendu son âme aux Ombres.' },
-    { name: "Dragon d'obsidienne", icon: '🐉', gx: 20, gy: 1, atk: 130, hp: 2600, loot: { gold: 4000 }, gems: 20, xp: 800,
+    { name: "Dragon d'obsidienne", place: "Trône d'Obsidienne", icon: '🐉', gx: 20, gy: 1, atk: 130, hp: 2600, loot: { gold: 4000 }, gems: 20, xp: 800,
       desc: 'La source de la corruption. Il dort sur un trésor d’éclats noirs.' },
   ],
+
+  // Rejouer un repaire déjà libéré : délai de repos (en secondes) et part du butin / de l'XP
+  REPLAY: { cooldown: 1200, loot: 0.35, xp: 0.3 },
 
   CLEAR: {
     tree: { name: 'Arbre', cost: { gold: 10 }, gain: { wood: 20 }, xp: 3, verb: 'Abattre' },

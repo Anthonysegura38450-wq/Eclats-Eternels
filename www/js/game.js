@@ -57,12 +57,58 @@
   // =====================================================================
   let S = null;
   let grid = new Array(N * N).fill(null);
-  let corrupt = new Uint8Array(N * N);
+
+  // --- Forme de l'île (identique pour toutes les parties) ---
+  const LAYOUT = (function () {
+    const land = new Uint8Array(N * N), water = new Uint8Array(N * N);
+    const c = N / 2;
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const nx = Math.abs((x + 0.5 - c) / c), ny = Math.abs((y + 0.5 - c) / c);
+        const d = Math.pow(Math.pow(nx, 2.4) + Math.pow(ny, 2.4), 1 / 2.4);
+        const wob = 0.07 * Math.sin(x * 1.3 + y * 0.45) + 0.05 * Math.cos(y * 1.15 - x * 0.7) + 0.03 * Math.sin((x + y) * 2.1);
+        if (d < 1.0 + wob) land[y * N + x] = 1;
+      }
+    }
+    // Lac et rivière qui se jette en cascade au bord de l'île
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const dx = x + 0.5 - 17.2, dy = y + 0.5 - 16.2;
+        const a = Math.atan2(dy, dx);
+        if (Math.hypot(dx * 0.95, dy) < 2.35 + 0.35 * Math.sin(a * 3 + 1)) water[y * N + x] = 1;
+      }
+    }
+    let fall = null;
+    for (let x = 18; x < N; x++) {
+      const y = 16 + Math.round(Math.sin(x * 0.9) * 0.6);
+      if (!land[y * N + x]) break;
+      water[y * N + x] = 1;
+      fall = [x, y];
+    }
+    const blocked = new Uint8Array(N * N);
+    for (let i = 0; i < N * N; i++) blocked[i] = !land[i] || water[i] ? 1 : 0;
+    // Chemins de terre (décor) qui partent de la place de la citadelle
+    const paths = [
+      [[11.5, 13.6], [11.6, 15.5], [10.8, 17.5], [9.6, 19.5], [9.2, 21.5]],
+      [[13.6, 11.5], [15.2, 12.2], [16.2, 13.8]],
+      [[9.4, 11.5], [7.5, 11.2], [5.5, 12.2], [3.6, 12]],
+      [[11.5, 9.4], [11.8, 7.5], [13, 5.5], [13.4, 3.5]],
+    ];
+    return { land, water, blocked, fall, paths, plaza: [9.4, 9.4, 13.6, 13.6] };
+  })();
 
   function addObj(o) {
     o.id = S.nextId++;
     S.objects.push(o);
     return o;
+  }
+
+  function nearWater(x, y) {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const X = x + dx, Y = y + dy;
+      if (X >= 0 && Y >= 0 && X < N && Y < N && LAYOUT.water[Y * N + X]) return true;
+    }
+    return false;
   }
 
   function newGame() {
@@ -73,10 +119,9 @@
       xp: 0, level: 1,
       army: {}, objects: [], nextId: 1,
       stats: { collects: 0, trained: 0, cleared: 0, wins: 0, summoned: 0 },
-      beaten: [], quest: 0, discovered: [],
+      beaten: [], quest: 0, discovered: [], campCd: {},
     };
     addObj({ type: 'b', kind: 'castle', gx: 10, gy: 10, size: 3, built: true, doneAt: 0, readyAt: now() + B.castle.produce.time * 1000 });
-    D.CAMPS.forEach((c, i) => addObj({ type: 'camp', camp: i, gx: c.gx, gy: c.gy, size: 2 }));
     rebuildGrid();
 
     const r = rng(seed);
@@ -85,7 +130,7 @@
       tries++;
       const gx = (r() * N) | 0, gy = (r() * N) | 0;
       if (Math.abs(gx - 11) <= 3 && Math.abs(gy - 11) <= 3) continue;
-      if (grid[gy * N + gx]) continue;
+      if (grid[gy * N + gx] || LAYOUT.blocked[gy * N + gx] || nearWater(gx, gy)) continue;
       if (trees < 46) { addObj({ type: 'tree', gx, gy, size: 1, v: r() }); trees++; }
       else { addObj({ type: 'rock', gx, gy, size: 1, v: r() }); rocks++; }
       grid[gy * N + gx] = true;
@@ -106,6 +151,9 @@
       S.army = S.army || {};
       S.beaten = S.beaten || [];
       for (const k of Object.keys(D.RES)) S.res[k] = Number(S.res[k]) || 0;
+      S.campCd = S.campCd || {};
+      // Anciennes versions : les repaires étaient sur l'île, et le décor pouvait être dans l'eau
+      S.objects = S.objects.filter((o) => o.type !== 'camp' && !((o.type === 'tree' || o.type === 'rock') && LAYOUT.blocked[o.gy * N + o.gx]));
       rebuildGrid();
       return true;
     } catch (e) {
@@ -118,22 +166,13 @@
 
   function rebuildGrid() {
     grid = new Array(N * N).fill(null);
-    corrupt = new Uint8Array(N * N);
     for (const o of S.objects) {
       for (let y = o.gy; y < o.gy + o.size; y++) {
         for (let x = o.gx; x < o.gx + o.size; x++) {
           if (x >= 0 && y >= 0 && x < N && y < N) grid[y * N + x] = o;
         }
       }
-      if (o.type === 'camp') {
-        for (let y = o.gy - 2; y < o.gy + o.size + 2; y++) {
-          for (let x = o.gx - 2; x < o.gx + o.size + 2; x++) {
-            if (x >= 0 && y >= 0 && x < N && y < N) corrupt[y * N + x] = 1;
-          }
-        }
-      }
     }
-    groundDirty = true;
   }
 
   function isFree(gx, gy, size, ignore) {
@@ -142,7 +181,7 @@
       for (let x = gx; x < gx + size; x++) {
         const o = grid[y * N + x];
         if (o && o !== ignore) return false;
-        if (corrupt[y * N + x]) return false;
+        if (LAYOUT.blocked[y * N + x]) return false;
       }
     }
     return true;
@@ -362,7 +401,6 @@
   const floaters = [];
   const sparks = [];
   const clouds = [];
-  let groundDirty = true;
   let selectedId = null;
   let placing = null;   // { kind, gx, gy, move: obj|null }
 
@@ -459,8 +497,9 @@
     ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * (W / 2 - cam.x * z), DPR * (H / 2 - cam.y * z));
     ctx.imageSmoothingQuality = 'high';
 
-    if (groundDirty || !ground) { ground = ART.buildGround(N, corrupt, [9.4, 9.4, 13.6, 13.6]); groundDirty = false; }
+    if (!ground) ground = ART.buildGround(N, LAYOUT);
     ctx.drawImage(ground.c, ground.ox, ground.oy, ground.w, ground.h);
+    ART.drawWaterLive(ctx, t);
 
     // Sélection
     const sel = selectedId != null ? S.objects.find((o) => o.id === selectedId) : null;
@@ -475,7 +514,6 @@
       if (placing && placing.move === o) continue;
       if (o.type === 'tree') { const [x, y] = P(o.gx + 0.5, o.gy + 0.5); ART.drawTree(ctx, x, y, o.v); }
       else if (o.type === 'rock') { const [x, y] = P(o.gx + 0.5, o.gy + 0.5); ART.drawRock(ctx, x, y, o.v); }
-      else if (o.type === 'camp') ART.drawCamp(ctx, o.gx, o.gy, o.camp, t);
       else if (!o.built) {
         const p = clamp(1 - (o.doneAt - now()) / (B[o.kind].time * 1000), 0, 1);
         const r = ART.drawConstruction(ctx, o.kind, o.gx, o.gy, p);
@@ -680,7 +718,6 @@
     if (o.type === 'b' && isReady(o)) { collect(o); save(); return; }
     selectedId = o.id;
     if (o.type === 'b') openBuildingSheet(o);
-    else if (o.type === 'camp') openCampSheet(o);
     else openClearSheet(o);
   }
 
@@ -941,18 +978,98 @@
     if (r >= 0.7) return { label: 'Combat serré', cls: '' };
     return { label: 'Très risqué', cls: 'lack' };
   }
-  function openCampSheet(o) {
-    const def = D.CAMPS[o.camp];
+  // État d'un repaire sur la carte des expéditions
+  function campState(i) {
+    if (!S.beaten.includes(i)) return i === 0 || S.beaten.includes(i - 1) ? 'open' : 'locked';
+    return now() < (S.campCd[i] || 0) ? 'rest' : 'replay';
+  }
+  function campLoot(i, replay) {
+    const def = D.CAMPS[i];
+    const k = replay ? D.REPLAY.loot : 1;
+    const loot = {};
+    for (const [r, v] of Object.entries(def.loot)) loot[r] = Math.round(v * k);
+    loot.gems = replay ? (i === D.CAMPS.length - 1 ? 2 : 0) : def.gems;
+    if (!loot.gems) delete loot.gems;
+    return { loot, xp: Math.round(def.xp * (replay ? D.REPLAY.xp : 1)) };
+  }
+  function openCampSheet(i) {
+    const def = D.CAMPS[i];
+    const st = campState(i);
     const a = armyStats();
     const ch = chance(def);
-    const loot = Object.assign({}, def.loot, { gems: def.gems });
-    const html = `<h2>${img('foe' + o.camp, 'ht')}${def.name}</h2><p class="muted">${def.desc}</p>
+    const replay = st === 'replay' || st === 'rest';
+    const { loot, xp } = campLoot(i, replay);
+    let html = `<h2>${img('foe' + i, 'ht')}${def.name}</h2><p class="muted">${def.place} · ${def.desc}</p>
       <div class="stats"><div><span>Attaque ennemie</span><b>⚔️ ${def.atk}</b></div><div><span>Vie ennemie</span><b>❤️ ${fmt(def.hp)}</b></div><div><span>Ton armée</span><b>⚔️ ${fmt(a.atk)} · ❤️ ${fmt(a.hp)}</b></div></div>
       <p>Pronostic : <b class="${ch.cls}">${ch.label}</b></p>
-      <p>Butin : ${rewardHtml(loot)} · +${def.xp} XP · terres libérées</p>
-      <div class="row"><button class="btn war" type="button" data-act="attack" ${armySize() ? '' : 'disabled'}>⚔️ Attaquer avec toute l'armée</button></div>
-      ${armySize() ? '' : '<p class="muted">Construis une Caserne et entraîne des soldats pour attaquer.</p>'}`;
-    openSheet(html);
+      <p>${replay ? 'Butin (île déjà libérée)' : 'Butin'} : ${rewardHtml(loot)} · +${xp} XP</p>`;
+    if (st === 'rest') {
+      html += `<p>Les Ombres se regroupent. Elles reviendront dans <b id="shCd"></b>.</p>
+        <div class="row"><button class="btn war" type="button" disabled>⚔️ Attaquer</button></div>`;
+    } else {
+      html += `<div class="row"><button class="btn war" type="button" data-act="attack" data-camp="${i}" ${armySize() ? '' : 'disabled'}>⚔️ ${replay ? 'Repousser les Ombres' : 'Attaquer avec toute l’armée'}</button></div>
+        ${armySize() ? '' : '<p class="muted">Construis une Caserne et entraîne des soldats pour attaquer.</p>'}`;
+    }
+    openSheet(html, () => {
+      if (campState(i) === 'rest') { const e = $('shCd'); if (e) e.textContent = fmtTime(((S.campCd[i] || 0) - now()) / 1000); }
+      else if (st === 'rest') openCampSheet(i);
+    });
+  }
+
+  // --- Carte des expéditions ---
+  const expEl = $('expedition');
+  function openExpedition() {
+    closeSheet();
+    expEl.hidden = false;
+    renderExpedition(true);
+  }
+  function closeExpedition() {
+    expEl.hidden = true;
+    closeSheet();
+  }
+  function renderExpedition(scroll) {
+    const map = $('expMap');
+    const n = D.CAMPS.length;
+    const step = 210, H = n * step + 120;
+    const xs = [30, 70, 34, 68, 32, 58];
+    const pts = D.CAMPS.map((c, i) => [xs[i % xs.length], H - 150 - i * step]);
+    let html = `<div class="exp-inner" style="height:${H}px">
+      <svg class="exp-path" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M ${pts.map((p) => `${p[0]} ${p[1] + 40}`).join(' L ')}" vector-effect="non-scaling-stroke"/></svg>`;
+    D.CAMPS.forEach((c, i) => {
+      const st = campState(i);
+      const dark = st === 'open' || st === 'locked';
+      const islet = ART.isletURL(dark ? 'shadow' : 'free', i);
+      const top = dark ? `<img class="exp-foe" src="${ART.iconURL('foe' + i, 160)}" alt="">` : `<img class="exp-foe flag" src="${ART.iconURL('squire', 128)}" alt="">`;
+      html += `<button class="exp-node ${st}" type="button" data-act="expNode" data-camp="${i}" style="left:${pts[i][0]}%;top:${pts[i][1]}px">
+        <img class="exp-islet" src="${islet}" alt="">${top}
+        <span class="exp-num">${i + 1}</span>
+        <span class="exp-name">${c.place}</span>
+        <span class="exp-status" id="expSt${i}"></span></button>`;
+    });
+    html += '</div>';
+    map.innerHTML = html;
+    refreshExpedition();
+    if (scroll) {
+      const cur = D.CAMPS.findIndex((c, i) => campState(i) === 'open');
+      const idx = cur < 0 ? n - 1 : cur;
+      requestAnimationFrame(() => { map.scrollTop = pts[idx][1] - map.clientHeight / 2 + 60; });
+    }
+  }
+  function refreshExpedition() {
+    D.CAMPS.forEach((c, i) => {
+      const el = $('expSt' + i);
+      if (!el) return;
+      const st = campState(i);
+      el.textContent = st === 'locked' ? `🔒 ${c.name}`
+        : st === 'open' ? `⚔️ ${c.name}`
+        : st === 'rest' ? `✨ Libérée · retour dans ${fmtTime(((S.campCd[i] || 0) - now()) / 1000)}`
+        : '✨ Libérée · ⚔️ Rejouer';
+    });
+    const changed = D.CAMPS.some((c, i) => { const el = $('expSt' + i); return el && !el.parentElement.classList.contains(campState(i)); });
+    if (changed) { renderExpedition(false); return; }
+    const a = armyStats();
+    $('expArmy').innerHTML = `<b>Ton armée</b><br>${armyCount()} unité${armyCount() > 1 ? 's' : ''} · ⚔️ ${fmt(a.atk)} · ❤️ ${fmt(a.hp)}`;
   }
 
   // --- Armée ---
@@ -977,13 +1094,7 @@
     }
     html += '</div>';
     if (!countKind('den')) html += `<p class="muted">Construis un Antre des créatures (niveau 3) pour invoquer des monstres.</p>`;
-    html += `<h3>Repaires d'ombre</h3><div class="units">`;
-    D.CAMPS.forEach((c, i) => {
-      const done = S.beaten.includes(i);
-      html += `<div class="unit">${done ? '<span class="e">✨</span>' : img('foe' + i)}<div class="info"><b>${c.name}</b><div class="meta">${done ? 'Terres libérées' : `⚔️ ${c.atk} · ❤️ ${fmt(c.hp)}`}</div></div>
-        ${done ? '<span class="muted">✓</span>' : `<button class="btn" type="button" data-act="goCamp" data-camp="${i}">Voir</button>`}</div>`;
-    });
-    html += '</div>';
+    html += `<div class="row"><button class="btn war" type="button" data-act="openExpedition">🗺️ Partir en expédition</button></div>`;
     if (!countKind('barracks')) html += `<p class="muted">Construis une Caserne (niveau 2) pour entraîner des soldats.</p>`;
     openSheet(html);
   }
@@ -1011,7 +1122,7 @@
     const html = `<h2><span class="e">⚙️</span>Options</h2>
       <p>Ta partie est sauvegardée automatiquement sur cet appareil. Les constructions, récoltes et entraînements continuent même quand le jeu est fermé.</p>
       <h3>Comment jouer</h3>
-      <p>👆 Glisse un doigt pour te déplacer, pince pour zoomer.<br>🏗️ Construis des bâtiments, puis touche-les quand une bulle apparaît pour récolter.<br>⚔️ Entraîne des soldats à la Caserne et libère l’île des repaires d’ombre.<br>🌳 Touche les arbres et les rochers pour récupérer du bois et de la pierre.</p>
+      <p>👆 Glisse un doigt pour te déplacer, pince pour zoomer.<br>🏗️ Construis des bâtiments, puis touche-les quand une bulle apparaît pour récolter.<br>⚔️ Entraîne des soldats à la Caserne, puis pars en 🗺️ Expédition libérer les îles envahies par les Ombres.<br>🌳 Touche les arbres et les rochers pour récupérer du bois et de la pierre.</p>
       <div class="row"><button class="btn" type="button" data-act="center">🏰 Revenir à la citadelle</button>
       <button class="btn war" type="button" data-act="askReset">Recommencer la partie</button></div>
       <p class="muted">Niveau ${S.level} · ${S.stats.collects} récoltes · ${S.stats.trained} soldats entraînés · ${S.beaten.length} repaires libérés</p>`;
@@ -1051,29 +1162,31 @@
     return { rounds, win, dead, startHp };
   }
 
-  function attack(o) {
-    const def = D.CAMPS[o.camp];
-    if (!armySize()) return;
+  function attack(i) {
+    const def = D.CAMPS[i];
+    const st = campState(i);
+    if (!armySize() || st === 'locked' || st === 'rest') return;
+    const replay = st === 'replay';
     closeSheet();
     const sim = simulate(def);
     // Appliquer les pertes tout de suite (sauvegarde cohérente)
     for (const [k, n] of Object.entries(sim.dead)) S.army[k] = Math.max(0, (S.army[k] || 0) - n);
-    let loot = null;
+    let loot = null, xp = 0;
     if (sim.win) {
+      const won = campLoot(i, replay);
       loot = {};
-      for (const [k, v] of Object.entries(def.loot)) loot[k] = gain(k, v);
-      loot.gems = gain('gems', def.gems);
-      S.beaten.push(o.camp);
+      for (const [k, v] of Object.entries(won.loot)) loot[k] = gain(k, v);
+      xp = won.xp;
+      if (!replay) S.beaten.push(i);
+      S.campCd[i] = now() + D.REPLAY.cooldown * 1000;
       S.stats.wins++;
-      S.objects = S.objects.filter((x) => x !== o);
-      rebuildGrid();
-      addXp(def.xp);
+      addXp(xp);
     }
     save();
-    playBattle(def, sim, loot);
+    playBattle(def, sim, loot, { xp, replay, idx: i });
   }
 
-  function playBattle(def, sim, loot) {
+  function playBattle(def, sim, loot, info) {
     const el = $('battle');
     $('bTitle').textContent = `⚔️ ${def.name}`;
     const troops = $('bTroops');
@@ -1126,7 +1239,7 @@
       const lost = Object.values(sim.dead).reduce((a, b) => a + b, 0);
       const res = $('bResult');
       if (sim.win) {
-        res.innerHTML = `<b>🏆 Victoire !</b>Les terres sont libérées de l'ombre.<br>Butin : ${rewardHtml(loot)} · +${def.xp} XP${lost ? `<br>Soldats tombés : ${lost}` : '<br>Aucune perte !'}`;
+        res.innerHTML = `<b>🏆 Victoire !</b>${info.replay ? 'Tu as repoussé les Ombres.' : `${def.place} est libérée de l'ombre !`}<br>Butin : ${rewardHtml(loot)} · +${info.xp} XP${lost ? `<br>Soldats tombés : ${lost}` : '<br>Aucune perte !'}`;
       } else {
         res.innerHTML = `<b>💀 Défaite…</b>${lost ? `Tu as perdu ${lost} soldat${lost > 1 ? 's' : ''}.` : ''} Renforce ton armée et reviens plus fort.`;
       }
@@ -1158,15 +1271,15 @@
     },
     train: (d) => { const o = S.objects.find((x) => x.id === selectedId); if (o) trainUnit(o, d.unit); },
     clear: () => { const o = S.objects.find((x) => x.id === selectedId); if (o) clearObj(o); },
-    attack: () => { const o = S.objects.find((x) => x.id === selectedId); if (o) attack(o); },
-    goCamp: (d) => {
-      const o = S.objects.find((x) => x.type === 'camp' && x.camp === Number(d.camp));
-      if (!o) return;
-      centerOn(o);
-      selectedId = o.id;
-      openCampSheet(o);
+    attack: (d) => attack(Number(d.camp)),
+    openExpedition: () => openExpedition(),
+    closeExpedition: () => closeExpedition(),
+    expNode: (d) => {
+      const i = Number(d.camp);
+      if (campState(i) === 'locked') { toast(`🔒 Libère d'abord ${D.CAMPS[i - 1].place}.`); return; }
+      openCampSheet(i);
     },
-    closeBattle: () => { $('battle').hidden = true; checkQuests(); },
+    closeBattle: () => { $('battle').hidden = true; checkQuests(); if (!expEl.hidden) renderExpedition(false); },
     center: () => { const c = S.objects.find((x) => x.kind === 'castle'); if (c) centerOn(c); closeSheet(); },
     askReset: () => {
       openSheet(`<h2><span class="e">⚠️</span>Recommencer ?</h2><p>Toute ta progression sera effacée. Cette action est définitive.</p>
@@ -1206,6 +1319,7 @@
     if (ts - lastUi > 250) {
       renderHud();
       if (sheetRefresh && !sheet.hidden) sheetRefresh();
+      if (!expEl.hidden) refreshExpedition();
       lastUi = ts;
     }
     if (now() - lastSave > 5000) { save(); lastSave = now(); }

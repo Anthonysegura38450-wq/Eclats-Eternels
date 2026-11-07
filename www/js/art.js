@@ -1233,88 +1233,147 @@ window.EE_ART = (function () {
   // =====================================================================
   // Sol de l'île (mis en cache)
   // =====================================================================
-  function buildGround(N, corrupt, plaza) {
-    const pad = 70;
-    const w = N * 2 * HW + pad * 2, h = N * 2 * HH + pad * 2 + 120;
+  function hash2(a, b) {
+    let h = (a * 374761393 + b * 668265263) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  const WATER = { tiles: [], fall: null };
+
+  // Petit rocher flottant autour de l'île
+  function miniIslet(cx, cy, s, seed) {
+    const r = rnd(seed);
+    ctx.beginPath();
+    ctx.moveTo(cx - 26 * s, cy);
+    for (let i = 1; i <= 6; i++) {
+      const t = i / 7;
+      ctx.lineTo(cx - 26 * s + 52 * s * t, cy + (8 + Math.sin(t * Math.PI) * 52 + r() * 8) * s);
+    }
+    ctx.lineTo(cx + 26 * s, cy);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, cy, 0, cy + 60 * s);
+    g.addColorStop(0, '#8d6a4a'); g.addColorStop(1, '#3a2a1e');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(40,25,15,.5)'; ctx.lineWidth = 0.8; ctx.stroke();
+    ell(cx, cy + 2 * s, 27 * s, 13 * s, '#7a5233');
+    const gg = ctx.createRadialGradient(cx - 8 * s, cy - 4 * s, 2, cx, cy, 28 * s);
+    gg.addColorStop(0, '#8fd06a'); gg.addColorStop(1, '#4f9a3c');
+    ell(cx, cy, 27 * s, 13 * s, gg, 'rgba(40,70,20,.5)');
+    if (s > 0.6) { ctx.save(); ctx.translate(cx + 4 * s, cy + 2 * s); oak(s * 0.6, seed); ctx.restore(); }
+  }
+
+  function buildGround(N, LAY) {
+    const { land, water, fall, paths, plaza } = LAY;
+    const isLand = (x, y) => x >= 0 && y >= 0 && x < N && y < N && land[y * N + x] === 1;
+    const isWater = (x, y) => isLand(x, y) && water[y * N + x] === 1;
+    const pad = 90, GS = 1.75;
+    const w = N * 2 * HW + pad * 2, h = N * 2 * HH + pad * 2 + 320;
     const c = document.createElement('canvas');
-    c.width = Math.ceil(w * SCALE); c.height = Math.ceil(h * SCALE);
+    c.width = Math.ceil(w * GS); c.height = Math.ceil(h * GS);
     const prev = ctx;
     ctx = c.getContext('2d');
-    ctx.setTransform(SCALE, 0, 0, SCALE, (N * HW + pad) * SCALE, pad * SCALE);
+    ctx.setTransform(GS, 0, 0, GS, (N * HW + pad) * GS, pad * GS);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const r = rnd(4242);
-    const T = P(0, 0), R = P(N, 0), Bt = P(N, N), L = P(0, N);
-    const depth = 64;
+    const cN = N / 2;
+    const depthAt = (x, y) => {
+      const d = Math.min(1, Math.hypot((x + 0.5 - cN) / cN, (y + 0.5 - cN) / cN));
+      return 42 + 220 * Math.pow(1 - d, 1.35) + hash2(x, y) * 18;
+    };
 
-    // Falaises
-    const cliff = (A, B, base, lit) => {
-      const pts = [A, B, add(B, [0, depth]), add(A, [0, depth])];
-      const g = ctx.createLinearGradient(0, Math.min(A[1], B[1]), 0, Math.max(A[1], B[1]) + depth);
-      g.addColorStop(0, shade(base, 0.05)); g.addColorStop(1, shade(base, -0.45));
-      fill(pts, g, null);
+    // Rochers flottants à l'arrière
+    miniIslet(...P(-3, 8), 0.9, 3);
+    miniIslet(...P(27, 5), 0.7, 4);
+
+    // Dessous rocheux : une colonne par case, de l'arrière vers l'avant
+    const tiles = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (isLand(x, y)) tiles.push([x, y]);
+    tiles.sort((a, b) => a[0] + a[1] - (b[0] + b[1]) || a[0] - b[0]);
+    const cliffFace = (A, B, d, lit, seed) => {
+      const rr2 = rnd(seed);
+      const mid = lerp(A, B, 0.5);
+      const pts = [A, B, add(B, [0, d]), add(mid, [0, d + 6 + rr2() * 10]), add(A, [0, d])];
+      const g = ctx.createLinearGradient(0, A[1], 0, A[1] + d);
+      if (lit) { g.addColorStop(0, '#a07a55'); g.addColorStop(0.15, '#8c6a4b'); g.addColorStop(1, '#3d2c20'); }
+      else { g.addColorStop(0, '#7e5d40'); g.addColorStop(0.15, '#6b4f37'); g.addColorStop(1, '#2a1e16'); }
+      path(pts); ctx.fillStyle = g; ctx.fill();
       ctx.save(); path(pts); ctx.clip();
-      ctx.strokeStyle = 'rgba(40,25,15,.35)'; ctx.lineWidth = 1;
-      for (let k = 1; k < 7; k++) {
-        ctx.beginPath();
-        for (let t2 = 0; t2 <= 1.001; t2 += 0.05) {
-          const p = lerp(A, B, t2);
-          const yy = p[1] + k * 9 + Math.sin(t2 * 40 + k) * 1.5 + (r() - 0.5) * 1.5;
-          if (t2 === 0) ctx.moveTo(p[0], yy); else ctx.lineTo(p[0], yy);
-        }
-        ctx.stroke();
+      ctx.strokeStyle = lit ? 'rgba(50,30,15,.28)' : 'rgba(20,10,5,.3)'; ctx.lineWidth = 0.9;
+      for (let k = 12; k < d; k += 11) {
+        ctx.beginPath(); ctx.moveTo(A[0], A[1] + k + (rr2() - 0.5) * 2); ctx.lineTo(B[0], B[1] + k + (rr2() - 0.5) * 2); ctx.stroke();
       }
-      for (let i = 0; i < 70; i++) {
-        const p = lerp(A, B, r());
-        ell(p[0], p[1] + 8 + r() * (depth - 14), 2 + r() * 3, 1.3 + r() * 1.5, shade('#8a8278', (r() - 0.5) * 0.3), 'rgba(40,25,15,.4)');
+      for (let k = 0; k < 3; k++) {
+        const p = lerp(A, B, rr2());
+        ell(p[0], p[1] + 10 + rr2() * (d - 14), 2 + rr2() * 2.5, 1.4 + rr2() * 1.4, lit ? 'rgba(160,150,135,.55)' : 'rgba(120,110,100,.5)');
       }
-      ctx.fillStyle = lit ? 'rgba(255,240,210,.06)' : 'rgba(20,10,40,.25)';
-      ctx.fillRect(Math.min(A[0], B[0]) - 2, Math.min(A[1], B[1]) - 2, Math.abs(B[0] - A[0]) + 4, Math.abs(B[1] - A[1]) + depth + 4);
+      ctx.fillStyle = lit ? 'rgba(60,35,15,.55)' : 'rgba(40,25,10,.6)';
+      path([A, B, add(B, [0, 5]), add(A, [0, 5])]); ctx.fill();
       ctx.restore();
-      // bande de terre sous l'herbe
-      const dirt = [A, B, add(B, [0, 6]), add(A, [0, 6])];
-      fill(dirt, shade('#8a5a36', lit ? 0 : -0.2), null);
-      // racines pendantes
-      ctx.strokeStyle = 'rgba(70,45,25,.8)'; ctx.lineWidth = 0.9;
-      for (let i = 0; i < 12; i++) {
-        const p = lerp(A, B, r());
-        ctx.beginPath(); ctx.moveTo(p[0], p[1] + 5); ctx.quadraticCurveTo(p[0] + 4, p[1] + 14, p[0] - 1, p[1] + 18 + r() * 10); ctx.stroke();
+    };
+    for (const [x, y] of tiles) {
+      const d = depthAt(x, y);
+      cliffFace(P(x, y + 1), P(x + 1, y + 1), d, true, x * 31 + y);
+      cliffFace(P(x + 1, y + 1), P(x + 1, y), d, false, x * 17 + y * 7);
+    }
+
+    // Dessus : herbe (et sable sous l'eau)
+    const noise = (x, y) => 0.5 + 0.22 * Math.sin(x * 0.42 + 1.3) * Math.cos(y * 0.37 + 0.7) + 0.18 * Math.sin((x + y) * 0.23 + 2.1) + 0.1 * Math.cos((x - y) * 0.6);
+    const landPath = () => {
+      ctx.beginPath();
+      for (const [x, y] of tiles) {
+        const a = P(x, y), b = P(x + 1, y), cc = P(x + 1, y + 1), d = P(x, y + 1);
+        ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(cc[0], cc[1]); ctx.lineTo(d[0], d[1]); ctx.closePath();
       }
     };
-    cliff(L, Bt, '#8d6a4a', true);
-    cliff(Bt, R, '#7a5a3e', false);
-    // pointe rocheuse sous l'île
-    const tipL = add(L, [N * 6, depth]), tipR = add(R, [-N * 6, depth]), tipB = add(Bt, [0, depth + 90]);
-    const tg = ctx.createLinearGradient(0, Bt[1] + depth, 0, tipB[1]);
-    tg.addColorStop(0, '#5e4631'); tg.addColorStop(1, '#2e2219');
-    fill([add(L, [0, depth]), add(Bt, [0, depth]), tipB, tipL], tg, null);
-    fill([add(Bt, [0, depth]), add(R, [0, depth]), tipR, tipB], shade('#4a3828', -0.15), null);
-    for (let i = 0; i < 40; i++) {
-      const t2 = r(), side = r() > 0.5;
-      const a = side ? lerp(add(L, [0, depth]), tipB, t2) : lerp(add(R, [0, depth]), tipB, t2);
-      ell(a[0] + (side ? 10 : -10) * r(), a[1] - r() * 10, 2 + r() * 3, 1.5 + r() * 1.5, 'rgba(110,95,80,.6)');
+    for (const [x, y] of tiles) {
+      const n = noise(x, y);
+      const col = isWater(x, y) ? '#d8c48e' : `hsl(${88 + n * 16},${52 + n * 8}%,${42 + n * 12}%)`;
+      path([P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)]);
+      ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 0.9; ctx.stroke();
     }
 
-    // Herbe
-    const noise = (x, y) => 0.5 + 0.22 * Math.sin(x * 0.42 + 1.3) * Math.cos(y * 0.37 + 0.7) + 0.18 * Math.sin((x + y) * 0.23 + 2.1) + 0.1 * Math.cos((x - y) * 0.6);
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        const n = noise(x, y);
-        const pts = [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)];
-        const col = `hsl(${88 + n * 16},${52 + n * 8}%,${42 + n * 12}%)`;
-        path(pts); ctx.fillStyle = col; ctx.fill();
-        ctx.strokeStyle = col; ctx.lineWidth = 0.8; ctx.stroke();
-      }
-    }
     ctx.save();
-    path([T, R, Bt, L]); ctx.clip();
-    // lumière générale (plus clair au nord-ouest)
+    landPath(); ctx.clip();
+    const T = P(0, 0), Bt = P(N, N), Lf = P(0, N), Rt = P(N, 0);
     const lg = ctx.createLinearGradient(T[0], T[1], Bt[0], Bt[1]);
     lg.addColorStop(0, 'rgba(255,250,220,.16)'); lg.addColorStop(1, 'rgba(20,40,10,.16)');
-    ctx.fillStyle = lg; ctx.fillRect(L[0], T[1], R[0] - L[0], Bt[1] - T[1]);
+    ctx.fillStyle = lg; ctx.fillRect(Lf[0], T[1], Rt[0] - Lf[0], Bt[1] - T[1]);
+    const onGrass = (gx, gy) => isLand(gx | 0, gy | 0) && !isWater(gx | 0, gy | 0);
+    // taches de trèfle
+    for (let i = 0; i < N * N * 0.6; i++) {
+      const gx = r() * N, gy = r() * N;
+      if (!onGrass(gx, gy)) continue;
+      const p = P(gx, gy);
+      ell(p[0], p[1], 6 + r() * 12, 3 + r() * 5, `rgba(${40 + r() * 30},${100 + r() * 30},30,.13)`);
+    }
+    // chemins de terre
+    for (const line of paths) {
+      const pts = line.map(([x, y]) => P(x, y));
+      const stroke = (wd, col) => {
+        ctx.strokeStyle = col; ctx.lineWidth = wd;
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+          const m = lerp(pts[i - 1], pts[i], 0.5);
+          ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], m[0], m[1]);
+        }
+        ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+        ctx.stroke();
+      };
+      stroke(17, 'rgba(120,90,50,.35)');
+      stroke(12, '#c2a273');
+      stroke(6, 'rgba(220,195,150,.6)');
+      for (let i = 1; i < pts.length; i++) {
+        for (let k = 0; k < 8; k++) {
+          const p = lerp(pts[i - 1], pts[i], r());
+          ell(p[0] + (r() - 0.5) * 10, p[1] + (r() - 0.5) * 5, 1 + r(), 0.7 + r() * 0.5, 'rgba(120,100,80,.55)');
+        }
+      }
+    }
     // touffes d'herbe
     const batches = [['rgba(40,90,25,.55)', []], ['rgba(170,220,110,.45)', []], ['rgba(70,120,35,.5)', []]];
     for (let i = 0; i < N * N * 16; i++) {
       const gx = r() * N, gy = r() * N;
-      if (corrupt[(gy | 0) * N + (gx | 0)]) continue;
+      if (!onGrass(gx, gy)) continue;
       const p = P(gx, gy);
       batches[(r() * 3) | 0][1].push([p[0], p[1], (r() - 0.5) * 2.2, 2 + r() * 2.6]);
     }
@@ -1324,55 +1383,16 @@ window.EE_ART = (function () {
       for (const [x, y, lean, hh] of list) { ctx.moveTo(x, y); ctx.lineTo(x + lean, y - hh); }
       ctx.stroke();
     }
-    // taches de trèfle et petites fleurs
-    for (let i = 0; i < N * N * 0.5; i++) {
-      const gx = r() * N, gy = r() * N;
-      if (corrupt[(gy | 0) * N + (gx | 0)]) continue;
-      const p = P(gx, gy);
-      ell(p[0], p[1], 6 + r() * 10, 3 + r() * 4, `rgba(${40 + r() * 30},${100 + r() * 30},30,.14)`);
-    }
     const fcols = ['#ffffff', '#ffe066', '#ff9ec7', '#c9b6ff'];
     for (let i = 0; i < N * N * 0.9; i++) {
       const gx = r() * N, gy = r() * N;
-      if (corrupt[(gy | 0) * N + (gx | 0)]) continue;
+      if (!onGrass(gx, gy)) continue;
       const p = P(gx, gy);
       circle(p[0], p[1], 0.9, fcols[(r() * 4) | 0]);
     }
-    // terres corrompues : nappes d'ombre aux bords diffus
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        if (!corrupt[y * N + x]) continue;
-        for (let k = 0; k < 3; k++) {
-          const p = P(x + 0.2 + r() * 0.6, y + 0.2 + r() * 0.6);
-          const rad = 26 + r() * 14;
-          const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], rad);
-          g.addColorStop(0, 'rgba(48,26,70,.7)'); g.addColorStop(0.6, 'rgba(56,30,80,.45)'); g.addColorStop(1, 'rgba(60,32,85,0)');
-          ctx.fillStyle = g;
-          ctx.beginPath(); ctx.ellipse(p[0], p[1], rad, rad * 0.5, 0, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-    }
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        if (!corrupt[y * N + x]) continue;
-        ctx.strokeStyle = 'rgba(120,100,130,.55)'; ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        for (let k = 0; k < 10; k++) { const p = P(x + r(), y + r()); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0] + (r() - 0.5) * 2, p[1] - 1.5 - r() * 2); }
-        ctx.stroke();
-        for (let k = 0; k < 2; k++) {
-          let p = P(x + r(), y + r());
-          ctx.strokeStyle = `rgba(210,80,255,${0.25 + r() * 0.35})`; ctx.lineWidth = 0.8;
-          ctx.beginPath(); ctx.moveTo(p[0], p[1]);
-          for (let s2 = 0; s2 < 4; s2++) { p = add(p, [(r() - 0.5) * 12, (r() - 0.5) * 6]); ctx.lineTo(p[0], p[1]); }
-          ctx.stroke();
-        }
-        for (let k = 0; k < 6; k++) { const p = P(x + r(), y + r()); circle(p[0], p[1], 0.9, 'rgba(150,130,160,.6)'); }
-      }
-    }
     // place pavée de la citadelle
     if (plaza) {
-      const [px0, py0, px1, py1] = plaza;
-      const pf = rect(px0, py0, px1, py1);
+      const pf = rect(...plaza);
       const pts = [pf.t, pf.r, pf.b, pf.l];
       fill(pts, '#b9b09c', 'rgba(90,70,50,.4)');
       const [e1, L1] = unit(pf.t, pf.r);
@@ -1386,15 +1406,188 @@ window.EE_ART = (function () {
         }
       });
     }
+    // Eau : lac et rivière
+    const wt = tiles.filter(([x, y]) => isWater(x, y));
+    if (wt.length) {
+      // contours arrondis : union d'ellipses centrées sur chaque case d'eau
+      const blob = (rx, ry) => {
+        ctx.beginPath();
+        for (const [x, y] of wt) { const p = P(x + 0.5, y + 0.5); ctx.moveTo(p[0] + rx, p[1]); ctx.ellipse(p[0], p[1], rx, ry, 0, 0, Math.PI * 2); }
+      };
+      blob(38, 19.5); ctx.fillStyle = '#cdb983'; ctx.fill();
+      blob(34, 17.5); ctx.fillStyle = '#e3d3a2'; ctx.fill();
+      blob(30, 15.5); ctx.fillStyle = '#a6e0f4'; ctx.fill();
+      blob(26.5, 13.5);
+      const wg = ctx.createLinearGradient(P(15, 13)[0], P(15, 13)[1], P(21, 19)[0], P(21, 19)[1]);
+      wg.addColorStop(0, '#5fbbe9'); wg.addColorStop(0.5, '#3a92d0'); wg.addColorStop(1, '#2a72b6');
+      ctx.fillStyle = wg; ctx.fill();
+      ctx.save(); blob(26.5, 13.5); ctx.clip();
+      for (const [x, y] of wt) {
+        if (r() < 0.22 && !(fall && y === fall[1] && x > 18)) {
+          const p = P(x + 0.3 + r() * 0.4, y + 0.3 + r() * 0.4);
+          ell(p[0], p[1], 5, 2.6, '#4f9a3c', 'rgba(30,60,20,.6)');
+          fill([[p[0], p[1]], [p[0] + 5, p[1] - 0.6], [p[0] + 5, p[1] + 0.8]], '#3a92d0', null);
+          if (r() < 0.5) circle(p[0] - 1, p[1] - 1, 1.3, '#ff9ec7');
+        }
+      }
+      ctx.restore();
+      // roseaux sur les berges
+      ctx.strokeStyle = '#4a7f2e'; ctx.lineWidth = 0.9;
+      for (const [x, y] of wt) {
+        for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) {
+          if (isWater(x + dx, y + dy) || !isLand(x + dx, y + dy) || r() > 0.5) continue;
+          const p = P(x + 0.5 + dx * 0.55, y + 0.5 + dy * 0.55);
+          ctx.beginPath();
+          for (let k = -1; k <= 1; k++) { ctx.moveTo(p[0] + k * 1.6, p[1]); ctx.lineTo(p[0] + k * 2.4, p[1] - 6 - r() * 4); }
+          ctx.stroke();
+          ell(p[0] + 2.4, p[1] - 9, 0.9, 2.2, '#7a5130');
+        }
+      }
+    }
     ctx.restore();
-    // liseré d'herbe sur le bord avant
-    ctx.strokeStyle = 'rgba(60,110,30,.9)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(L[0], L[1]); ctx.lineTo(Bt[0], Bt[1]); ctx.lineTo(R[0], R[1]); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(L[0], L[1]); ctx.lineTo(T[0], T[1]); ctx.lineTo(R[0], R[1]); ctx.stroke();
+
+    // Bord de l'île : liseré d'herbe et racines qui pendent
+    for (const [x, y] of tiles) {
+      const edges = [];
+      if (!isLand(x, y + 1)) edges.push([P(x, y + 1), P(x + 1, y + 1)]);
+      if (!isLand(x + 1, y)) edges.push([P(x + 1, y + 1), P(x + 1, y)]);
+      if (!isLand(x - 1, y)) edges.push([P(x, y), P(x, y + 1), true]);
+      if (!isLand(x, y - 1)) edges.push([P(x, y), P(x + 1, y), true]);
+      for (const [A, B, back] of edges) {
+        if (back) { ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); continue; }
+        ctx.strokeStyle = '#4f8f34'; ctx.lineWidth = 3.2;
+        ctx.beginPath(); ctx.moveTo(A[0], A[1] + 1); ctx.lineTo(B[0], B[1] + 1); ctx.stroke();
+        ctx.strokeStyle = 'rgba(80,140,45,.9)'; ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        for (let k = 0; k < 5; k++) { const p = lerp(A, B, r()); ctx.moveTo(p[0], p[1] + 2); ctx.lineTo(p[0] + (r() - 0.5) * 2, p[1] + 4 + r() * 4); }
+        ctx.stroke();
+        if (r() < 0.35) {
+          const p = lerp(A, B, r());
+          ctx.strokeStyle = 'rgba(70,45,25,.85)'; ctx.lineWidth = 0.9;
+          ctx.beginPath(); ctx.moveTo(p[0], p[1] + 5); ctx.quadraticCurveTo(p[0] + 4, p[1] + 14, p[0] - 1, p[1] + 18 + r() * 12); ctx.stroke();
+        }
+      }
+    }
+
+    // Cascade (partie fixe)
+    WATER.tiles = wt.map(([x, y]) => P(x + 0.5, y + 0.5));
+    WATER.fall = null;
+    if (fall) {
+      const [fx, fy] = fall;
+      const A = lerp(P(fx + 1, fy + 1), P(fx + 1, fy), 0.18), B = lerp(P(fx + 1, fy + 1), P(fx + 1, fy), 0.82);
+      const len = depthAt(fx, fy) + 120;
+      const g = ctx.createLinearGradient(0, A[1], 0, A[1] + len);
+      g.addColorStop(0, 'rgba(120,200,240,.95)'); g.addColorStop(0.7, 'rgba(200,236,255,.7)'); g.addColorStop(1, 'rgba(230,246,255,0)');
+      path([A, B, add(B, [4, len]), add(A, [-4, len])]); ctx.fillStyle = g; ctx.fill();
+      WATER.fall = { A, B, len };
+    }
+
+    // Rochers flottants à l'avant
+    miniIslet(...P(6, 28), 0.8, 5);
+    miniIslet(...P(27, 25), 0.55, 6);
 
     ctx = prev;
     return { c, ox: -(N * HW + pad), oy: -pad, w, h };
+  }
+
+  // Reflets sur l'eau et cascade animée
+  function drawWaterLive(c, t) {
+    ctx = c;
+    ctx.lineWidth = 0.9;
+    WATER.tiles.forEach(([x, y], i) => {
+      const ox = (hash2(i, 7) - 0.5) * 30, oy = (hash2(i, 13) - 0.5) * 12;
+      const a = Math.max(0, 0.32 * Math.sin(t * 1.3 + i * 2.3));
+      if (a < 0.02) return;
+      const dx = Math.sin(t * 0.5 + i) * 3, len = 3 + hash2(i, 3) * 5;
+      ctx.strokeStyle = `rgba(255,255,255,${a})`;
+      ctx.beginPath(); ctx.moveTo(x + ox + dx - len, y + oy); ctx.lineTo(x + ox + dx + len, y + oy); ctx.stroke();
+    });
+    const f = WATER.fall;
+    if (!f) return;
+    ctx.lineWidth = 1.4;
+    for (let k = 0; k < 9; k++) {
+      const p = lerp(f.A, f.B, (k + 0.5) / 9);
+      for (let j = 0; j < 3; j++) {
+        const off = (t * 70 + k * 23 + j * f.len / 3) % f.len;
+        const a = 0.7 * (1 - off / f.len);
+        ctx.strokeStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath(); ctx.moveTo(p[0], p[1] + off); ctx.lineTo(p[0], p[1] + off + 10); ctx.stroke();
+      }
+    }
+    const top = lerp(f.A, f.B, 0.5);
+    for (let k = 0; k < 4; k++) {
+      const ph = (t * 0.8 + k / 4) % 1;
+      circle(top[0] + (k - 1.5) * 4, top[1] + 2 - ph * 4, 1.5 + ph * 2, `rgba(255,255,255,${0.5 * (1 - ph)})`);
+    }
+  }
+
+  // Petites îles de la carte des expéditions
+  const isletUrls = {};
+  function isletURL(kind, seed) {
+    const key = kind + seed;
+    if (isletUrls[key]) return isletUrls[key];
+    const c = document.createElement('canvas');
+    c.width = 240; c.height = 210;
+    const prev = ctx;
+    ctx = c.getContext('2d');
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const r = rnd(seed + 11);
+    const cx = 120, cy = 80;
+    // dessous rocheux
+    ctx.beginPath();
+    ctx.moveTo(cx - 96, cy + 4);
+    for (let i = 1; i < 10; i++) {
+      const t = i / 10;
+      ctx.lineTo(cx - 96 + 192 * t, cy + 8 + Math.sin(t * Math.PI) * 108 + (r() - 0.5) * 14);
+    }
+    ctx.lineTo(cx + 96, cy + 4);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, cy, 0, cy + 120);
+    const shadowy = kind === 'shadow';
+    g.addColorStop(0, shadowy ? '#5a4560' : '#8d6a4a'); g.addColorStop(1, shadowy ? '#1c1424' : '#33241a');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(30,15,10,.5)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 1;
+    for (let k = 18; k < 120; k += 14) { ctx.beginPath(); ctx.moveTo(cx - 100, cy + k); ctx.lineTo(cx + 100, cy + k + (r() - 0.5) * 6); ctx.stroke(); }
+    const sh = ctx.createLinearGradient(cx - 96, 0, cx + 96, 0);
+    sh.addColorStop(0, 'rgba(255,255,255,.06)'); sh.addColorStop(1, 'rgba(0,0,0,.3)');
+    ctx.fillStyle = sh; ctx.fillRect(0, 0, 240, 210);
+    ctx.restore();
+    // épaisseur de terre + dessus
+    ell(cx, cy + 6, 96, 46, shadowy ? '#3e2a44' : '#7a5233');
+    const tg = ctx.createRadialGradient(cx - 30, cy - 20, 4, cx, cy, 100);
+    if (shadowy) { tg.addColorStop(0, '#5e4a72'); tg.addColorStop(1, '#2d2038'); }
+    else { tg.addColorStop(0, '#9ad66f'); tg.addColorStop(1, '#4b9238'); }
+    ell(cx, cy, 96, 46, tg, 'rgba(30,20,20,.4)');
+    if (shadowy) {
+      ctx.strokeStyle = 'rgba(210,80,255,.55)'; ctx.lineWidth = 1;
+      for (let k = 0; k < 7; k++) {
+        let p = [cx + (r() - 0.5) * 140, cy + (r() - 0.5) * 50];
+        ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+        for (let s2 = 0; s2 < 4; s2++) { p = add(p, [(r() - 0.5) * 22, (r() - 0.5) * 10]); ctx.lineTo(p[0], p[1]); }
+        ctx.stroke();
+      }
+      // arbres morts
+      for (const [x, y] of [[cx - 70, cy - 4], [cx + 72, cy + 2]]) {
+        ctx.strokeStyle = '#2a1a22'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 30); ctx.moveTo(x, y - 18); ctx.lineTo(x - 10, y - 30); ctx.moveTo(x, y - 24); ctx.lineTo(x + 9, y - 34); ctx.stroke();
+      }
+      ctx.save(); ctx.translate(cx, cy - 26); ctx.scale(0.85, 0.85); campBase(); ctx.restore();
+      const fog = ctx.createRadialGradient(cx, cy, 10, cx, cy, 110);
+      fog.addColorStop(0, 'rgba(120,60,170,0)'); fog.addColorStop(1, 'rgba(120,60,170,.25)');
+      ell(cx, cy, 96, 46, fog);
+    } else {
+      for (let i = 0; i < 40; i++) {
+        const a = r() * Math.PI * 2, d = Math.sqrt(r());
+        circle(cx + Math.cos(a) * 86 * d, cy + Math.sin(a) * 40 * d, 1.1, ['#fff', '#ffe066', '#ff9ec7'][i % 3]);
+      }
+      ctx.save(); ctx.translate(cx - 62, cy + 6); oak(0.9, seed + 3); ctx.restore();
+      ctx.save(); ctx.translate(cx + 66, cy); pine(0.85, seed + 4); ctx.restore();
+      ctx.save(); ctx.translate(cx + 40, cy + 22); oak(0.6, seed + 5); ctx.restore();
+    }
+    ctx = prev;
+    return (isletUrls[key] = c.toDataURL());
   }
 
   // =====================================================================
@@ -1940,7 +2133,7 @@ window.EE_ART = (function () {
   }
 
   return {
-    P, buildGround, drawBuilding, drawConstruction, drawTree, drawRock, drawCamp, drawSprite,
+    P, buildGround, drawWaterLive, isletURL, drawBuilding, drawConstruction, drawTree, drawRock, drawCamp, drawSprite,
     drawBubble, drawBadge, sprite, iconURL, cloudSprite, buildingSprite,
   };
 })();

@@ -10,7 +10,8 @@ Jeu mobile de **construction de royaume et de stratégie** sur une île flottant
 - **Arbres et rochers** : touche-les pour récupérer du bois et de la pierre.
 - **Armée** : Écuyer, Archère, Chevalier et Mage d'éclat, entraînés à la Caserne. Les Chaumières agrandissent l'armée.
 - **Créatures** : 13 monstres à invoquer à l'Antre des créatures, en 4 raretés (commune, rare, épique, légendaire). Certains ne s'apprivoisent qu'après avoir vaincu un repaire. L'**Œuf mystère** donne une créature au hasard, et le **Bestiaire** garde la trace de ta collection. Tes créatures se promènent autour de leur Antre et combattent avec ton armée.
-- **Repaires d'ombre** : 6 repaires de plus en plus puissants, jusqu'au Dragon d'obsidienne. Chaque victoire rapporte un butin et libère des terres constructibles.
+- **Expéditions** : une carte de 6 îles envahies par les Ombres, à libérer une à une jusqu'au Dragon d'obsidienne. Une île libérée peut être réattaquée pour du butin après un temps de repos.
+- **L'île** : forme naturelle, dessous rocheux, lac, rivière et cascade, chemins de terre et rochers flottants.
 - **Progression** : expérience, niveaux qui débloquent bâtiments et soldats, et 24 quêtes pour guider le joueur.
 - **Temps réel** : constructions, récoltes et entraînements continuent quand le jeu est fermé. La partie est sauvegardée automatiquement.
 
