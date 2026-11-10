@@ -1,0 +1,16 @@
+{
+  "name": "eclats-eternels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Éclats Éternels — jeu clicker mobile",
+  "scripts": {
+    "build:web": "rm -rf www && mkdir www && cp index.html catcher.html manifest.json icon.svg www/",
+    "sync": "npm run build:web && npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.0"
+  }
+}

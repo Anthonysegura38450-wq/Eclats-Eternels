@@ -148,7 +148,11 @@ const ETERNITY_AT=1e7;
 const gain=()=>Math.floor(Math.sqrt(S.total/ETERNITY_AT));
 const frenzyPrice=()=>Math.max(800,Math.ceil(baseSec()*200));
 const save=()=>{S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+// Retour haptique : natif dans l'app iOS (Capacitor), vibration web sinon
+const vib=ms=>{
+  try{const H=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;
+    if(H){if(Array.isArray(ms))H.notification({type:'SUCCESS'});else H.impact({style:ms<=15?'LIGHT':'MEDIUM'});return}
+    navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 let ac;function tick(f){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
   const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.06;
   g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.08);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.08)}catch(e){}}
@@ -371,7 +375,7 @@ addEventListener('pagehide',save);
 document.addEventListener('dblclick',e=>e.preventDefault());
 
 applyStyle();render();
-window.__ee={S,checkAch,spawnGold,startRain};
+window.__ee={S,checkAch,spawnGold,startRain,applyStyle};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
