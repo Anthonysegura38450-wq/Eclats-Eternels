@@ -148,7 +148,7 @@
     <button class="btn danger" id="rst">Effacer ma progression</button>
   </div>
   <a class="lnk" href="https://anthonysegura38450-wq.github.io/Eclats-Eternels/privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>
-  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.2 · Éclats Éternels</div>
+  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.2.1 · Éclats Éternels</div>
 </div></div>
 <div id="svm" class="modal"><div class="panel">
   <div class="ph"><h2 id="svt">Sauvegarde</h2><button class="x" id="svc" aria-label="Fermer">✕</button></div>
@@ -384,8 +384,12 @@ function render(){
 const evBox=$('ev');
 const rnd=(a,b)=>a+Math.random()*(b-a);
 let nextGold=Date.now()+rnd(30,60)*1000,nextRain=Date.now()+rnd(150,240)*1000;
-function pop(x,y,txt,color){const d=document.createElement('div');d.className='pop';d.textContent=txt;d.style.cssText=`position:fixed;left:${x-20}px;top:${y-20}px;color:${color};z-index:9`;
-  document.body.appendChild(d);setTimeout(()=>d.remove(),900)}
+function pop(x,y,txt,color){const d=document.createElement('div');d.className='pop';d.textContent=txt;
+  d.style.cssText=`position:fixed;left:0;top:0;color:${color};z-index:9;visibility:hidden`;document.body.appendChild(d);
+  // centré sur le toucher, puis recadré selon la vraie taille du texte : toujours entièrement visible
+  const w=d.offsetWidth,h=d.offsetHeight,m=6;
+  d.style.left=Math.max(m,Math.min(innerWidth-w-m,x-w/2))+'px';d.style.top=Math.max(m+60,Math.min(innerHeight-h-m,y-h-10))+'px';d.style.visibility='visible';
+  setTimeout(()=>d.remove(),900)}
 function banner(t,ms=2500){const b=document.createElement('div');b.className='evmsg';b.textContent=t;document.body.appendChild(b);setTimeout(()=>b.remove(),ms)}
 function spawnGold(){
   const el=document.createElement('div');el.className='gold';
@@ -393,7 +397,7 @@ function spawnGold(){
   el.style.left=rnd(20,innerWidth-84)+'px';el.style.top=rnd(Math.max(20,sr.top-20),sr.bottom-80)+'px';
   el.style.setProperty('--dx',rnd(-60,60)+'px');
   el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.remove();S.golds++;
-    const r0=Math.random(),rect=el.getBoundingClientRect(),x=rect.left+30,y=rect.top+30;
+    const r0=Math.random(),x=e.clientX,y=e.clientY;
     if(r0<0.12){S.gems+=5;pop(x,y,'+5 💠','#7df9ff');toast('✨ Cristal doré : <b>+5 gemmes</b> !',2500)}
     else if(r0<0.30){S.frenzy=Math.max(S.frenzy,Date.now())+20000;pop(x,y,'🔥 ×3','#ffb347');toast('✨ Cristal doré : <b>Frénésie ×3</b> pendant 20 s !',2500)}
     else{const r=Math.max(perSec()*100,perClick()*100,100);S.score+=r;S.total+=r;pop(x,y,'+'+fmt(r),'#ffe27d');toast(`✨ Cristal doré : <b>+${fmt(r)}</b> éclats !`,2500)}
@@ -408,7 +412,7 @@ function startRain(){
     el.style.left=rnd(10,innerWidth-50)+'px';el.style.animationDuration=rnd(3.5,5.5)+'s';
     el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.remove();S.stars++;
       const r=Math.max(perSec()*8,perClick()*8,10);S.score+=r;S.total+=r;
-      const b=el.getBoundingClientRect();pop(b.left+15,b.top+15,'+'+fmt(r),'#fff3a8');tick(800+Math.random()*400);vib(10);render()});
+      pop(e.clientX,e.clientY,'+'+fmt(r),'#fff3a8');tick(800+Math.random()*400);vib(10);render()});
     evBox.appendChild(el);setTimeout(()=>el.remove(),6000)},i*650)}
 function eventsTick(){
   if(document.hidden||S.total<100)return;
