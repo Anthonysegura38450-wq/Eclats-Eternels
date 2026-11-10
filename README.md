@@ -16,3 +16,6 @@ Contrôles : glisser (tactile/souris) ou flèches ←/→.
 - 🌠 **Pluie d'étoiles** : des étoiles tombent sur l'écran, chacune touchée rapporte des éclats.
 - 🎁 **Récompense quotidienne** : série de 7 jours (éclats + gemmes, gros bonus au jour 7).
 - 🎉 **Week-end lumineux** : production ×1,5 le samedi et le dimanche.
+
+## Paramètres
+Engrenage ⚙️ en haut à droite : Renaissance (avec aperçu du gain), sons, vibrations, statistiques de la partie, effacement de la progression (double confirmation) et lien vers la politique de confidentialité.
