@@ -117,6 +117,7 @@
     animation:gpulse .6s ease-in-out infinite alternate,gdrift 8s linear forwards}
   @keyframes gpulse{to{transform:scale(1.18) rotate(8deg)}}
   @keyframes gdrift{from{margin-left:0}to{margin-left:var(--dx)}}
+  .gold.emoji{width:auto;height:auto;clip-path:none;background:none;font-size:56px;line-height:1;filter:drop-shadow(0 0 16px #ffd54a)}
   .star{font-size:34px;filter:drop-shadow(0 0 8px #fff);animation:fall linear forwards}
   @keyframes fall{from{transform:translateY(-60px) rotate(0)}to{transform:translateY(calc(100vh + 80px)) rotate(360deg)}}
   .evmsg{position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:50%;transform:translateX(-50%);z-index:8;
@@ -401,7 +402,7 @@ function checkAch(){
   if(S.total>=S.nextMil){
     let reached=S.nextMil;while(S.nextMil<=S.total){reached=S.nextMil;S.nextMil*=MIL_STEP}
     if(!surgeOn()){S.surge=Date.now()+300000;vib([80,40,80]);tick(1200);
-      toast(`⚡ <b>${fmt(reached)} éclats atteints !</b><br>Production ×10 pendant 5 minutes !<br><small>Prochain palier : ${fmt(S.nextMil)}</small>`,4500)}
+      {const T=evTheme();toast(`${T.surgeIco} <b>${fmt(reached)} éclats atteints !</b><br>${T.surgeTxt?T.surgeTxt+' : p':'P'}roduction ×10 pendant 5 minutes !<br><small>Prochain palier : ${fmt(S.nextMil)}</small>`,4500)}}
     save()
   }
   const got=[];
@@ -438,7 +439,7 @@ function render(){
   renderAch();
   if(setOpen)renderSettings();
   const f=$('frz'),pt=[],mmss=ms=>{const t=Math.ceil(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
-  if(surgeOn())pt.push('⚡ MILLION ×10 — '+mmss(S.surge-Date.now()));
+  if(surgeOn()){const T=evTheme();pt.push(T.surgeIco+' '+T.surge+' ×10 — '+mmss(S.surge-Date.now()))}
   if(frenzyOn())pt.push('🔥 FRÉNÉSIE ×3 — '+Math.ceil((S.frenzy-Date.now())/1000)+'s');
   f.style.display=pt.length?'block':'none';f.innerHTML=pt.join('<br>');
 }
@@ -459,27 +460,28 @@ function pop(x,y,txt,color){const d=document.createElement('div');d.className='p
   setTimeout(()=>d.remove(),900)}
 function banner(t,ms=2500){const b=document.createElement('div');b.className='evmsg';b.textContent=t;document.body.appendChild(b);setTimeout(()=>b.remove(),ms)}
 function spawnGold(){
-  const el=document.createElement('div');el.className='gold';
+  const T=evTheme(),el=document.createElement('div');el.className='gold'+(T.gold?' emoji':'');
+  if(T.gold){el.textContent=T.gold;if(T.goldFilter)el.style.filter=T.goldFilter+' drop-shadow(0 0 16px #ffd54a)'}
   const sr=$('stage').getBoundingClientRect();
   el.style.left=rnd(20,innerWidth-84)+'px';el.style.top=rnd(Math.max(20,sr.top-20),sr.bottom-80)+'px';
   el.style.setProperty('--dx',rnd(-60,60)+'px');
   el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.remove();S.golds++;
     const r0=Math.random(),{x,y}=ptr(e);
-    if(r0<0.12){S.gems+=5;pop(x,y,'+5 💠','#7df9ff');toast('✨ Cristal doré : <b>+5 gemmes</b> !',2500)}
-    else if(r0<0.30){S.frenzy=Math.max(S.frenzy,Date.now())+20000;pop(x,y,'🔥 ×3','#ffb347');toast('✨ Cristal doré : <b>Frénésie ×3</b> pendant 20 s !',2500)}
-    else{const r=Math.max(perSec()*100,perClick()*100,100);S.score+=r;S.total+=r;pop(x,y,'+'+fmt(r),'#ffe27d');toast(`✨ Cristal doré : <b>+${fmt(r)}</b> éclats !`,2500)}
+    if(r0<0.12){S.gems+=5;pop(x,y,'+5 💠','#7df9ff');toast(`${T.goldIco} ${T.goldName} : <b>+5 gemmes</b> !`,2500)}
+    else if(r0<0.30){S.frenzy=Math.max(S.frenzy,Date.now())+20000;pop(x,y,'🔥 ×3','#ffb347');toast(`${T.goldIco} ${T.goldName} : <b>Frénésie ×3</b> pendant 20 s !`,2500)}
+    else{const r=Math.max(perSec()*100,perClick()*100,100);S.score+=r;S.total+=r;pop(x,y,'+'+fmt(r),'#ffe27d');toast(`${T.goldIco} ${T.goldName} : <b>+${fmt(r)}</b> éclats !`,2500)}
     vib([30,30,30]);tick(990);render();save()});
   evBox.appendChild(el);setTimeout(()=>el.remove(),8000);
-  banner('✨ Un cristal doré est apparu !');tick(700)}
+  banner(T.goldIco+' '+T.goldMsg);tick(700)}
 function startRain(){
-  banner('🌠 PLUIE D\'ÉTOILES — attrape-les !',3500);tick(600);
+  const T=evTheme();banner(T.rain+' '+T.rainName+' — attrape-les !',3500);tick(600);
   const n=18;
   for(let i=0;i<n;i++)setTimeout(()=>{
-    const el=document.createElement('div');el.className='star';el.textContent='⭐';
+    const el=document.createElement('div');el.className='star';el.textContent=T.rain;el.style.filter=`drop-shadow(0 0 8px ${T.rainColor})`;
     el.style.left=rnd(10,innerWidth-50)+'px';el.style.animationDuration=rnd(3.5,5.5)+'s';
     el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.remove();S.stars++;
       const r=Math.max(perSec()*8,perClick()*8,10);S.score+=r;S.total+=r;
-      {const q=ptr(e);pop(q.x,q.y,'+'+fmt(r),'#fff3a8')}tick(800+Math.random()*400);vib(10);render()});
+      {const q=ptr(e);pop(q.x,q.y,'+'+fmt(r),T.rainColor)}tick(800+Math.random()*400);vib(10);render()});
     evBox.appendChild(el);setTimeout(()=>el.remove(),6000)},i*650)}
 function eventsTick(){
   if(document.hidden||S.total<100)return;
@@ -495,7 +497,7 @@ function dailyReward(){
   S.daily={d:today,n};
   const gold=Math.max(500,baseSec()*mult()*300)*n,gems=n===7?30:2;
   S.score+=gold;S.total+=gold;S.gems+=gems;save();
-  return `🎁 <b>Récompense du jour ${n}/7</b><br>+${fmt(gold)} éclats · +${gems} 💠`+(n<7?'<br><small>Reviens demain pour la suite !</small>':'<br><small>Série complète ! Elle repart demain.</small>')}
+  const T=evTheme();return `${T.dayIco} <b>${T.day} — jour ${n}/7</b><br>+${fmt(gold)} éclats · +${gems} 💠`+(n<7?'<br><small>Reviens demain pour la suite !</small>':'<br><small>Série complète ! Elle repart demain.</small>')}
 
 // ---------- Clic ----------
 $('gem').addEventListener('pointerdown',e=>{
@@ -520,7 +522,6 @@ const off=Math.min((Date.now()-S.last)/1000,4*3600);
 if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*(1+prisms()*0.1)*off*0.3;S.score+=v;S.total+=v;
   toast(`Bon retour !<br>Tes cristaux ont produit <b>${fmt(v)}</b> éclats pendant ton absence.`,4500)}
 
-{const d=dailyReward();if(d)setTimeout(()=>toast(d,5000),off>30?5200:600)}
 // ---------- Paramètres ----------
 let setOpen=false;
 function renderSettings(){
@@ -673,15 +674,18 @@ const FORMS=[ // une pierre précieuse par renaissance : taille (d), facettes (f
 const HEART_D='M50 120 C8 90 0 56 20 34 C36 18 50 30 50 42 C50 30 64 18 80 34 C100 56 92 90 50 120Z';
 const EGG_D='M50 3 C80 3 97 50 97 82 C97 108 76 122 50 122 C24 122 3 108 3 82 C3 50 20 3 50 3Z';
 const SEASONS={
- halloween:{nm:'Halloween',ico:'🎃',fx:'🦇',dates:'24 oct → 1er nov',msg:'🎃 <b>Halloween !</b><br>Le cristal a enfilé un chapeau de sorcière.',
+ halloween:{ev:{rain:'🎃',rainName:'PLUIE DE CITROUILLES',rainColor:'#ffb347',gold:'🎃',goldName:'Citrouille dorée',goldIco:'🎃',goldMsg:'Une citrouille dorée est apparue !',surge:'NUIT D\'HALLOWEEN',surgeTxt:'Nuit d\'Halloween',surgeIco:'🦇',day:'Friandise du jour',dayIco:'🍬'},nm:'Halloween',ico:'🎃',fx:'🦇',dates:'24 oct → 1er nov',msg:'🎃 <b>Halloween !</b><br>Le cristal a enfilé un chapeau de sorcière.',
    acc:'<g transform="translate(50 10) rotate(-8)"><ellipse cx="0" cy="3" rx="40" ry="9" fill="#2d0f4e"/><path d="M-26 2 L-6 -6 L-12 -42 L-3 -64 L14 -38 L24 -4 Z" fill="#4a1a7a"/><rect x="-9" y="-14" width="30" height="9" rx="1" fill="#ffb300"/><rect x="2" y="-14" width="8" height="9" fill="#ffe082"/></g>'},
- noel:{nm:'Noël',ico:'🎄',fx:'❄️',dates:'1er → 26 déc',msg:'🎄 <b>Joyeux Noël !</b><br>Le cristal porte un bonnet de Père Noël.',
+ noel:{ev:{rain:'❄️',rainName:'PLUIE DE FLOCONS',rainColor:'#bfe9ff',gold:'🎁',goldName:'Cadeau doré',goldIco:'🎁',goldMsg:'Un cadeau doré est apparu !',surge:'MAGIE DE NOËL',surgeTxt:'Magie de Noël',surgeIco:'🎄',day:'Cadeau de l\'Avent',dayIco:'🎄'},nm:'Noël',ico:'🎄',fx:'❄️',dates:'1er → 26 déc',msg:'🎄 <b>Joyeux Noël !</b><br>Le cristal porte un bonnet de Père Noël.',
    acc:'<g transform="translate(50 12) rotate(-10)"><path d="M-28 4 C-24 -22 -12 -46 12 -54 C22 -57 28 -48 23 -39 C18 -22 22 -8 30 4 Z" fill="#e53935"/><path d="M-26 -8 C-14 -22 -4 -36 4 -50" fill="none" stroke="#c62828" stroke-width="4" opacity=".5"/><rect x="-34" y="-6" width="68" height="15" rx="7.5" fill="#fff"/><circle cx="20" cy="-50" r="9" fill="#fff"/></g>'},
- an:{nm:'Nouvel An',ico:'🎆',fx:'✨',dates:'27 déc → 3 jan',msg:'🎆 <b>Bonne année !</b><br>Le cristal met son chapeau de fête.',
+ an:{ev:{rain:'🎊',rainName:'PLUIE DE CONFETTIS',rainColor:'#ff9ecb',gold:'🍾',goldName:'Bouteille dorée',goldIco:'🍾',goldMsg:'Une bouteille dorée est apparue !',surge:'FEU D\'ARTIFICE',surgeTxt:'Feu d\'artifice',surgeIco:'🎆',day:'Surprise du jour',dayIco:'🎉'},nm:'Nouvel An',ico:'🎆',fx:'✨',dates:'27 déc → 3 jan',msg:'🎆 <b>Bonne année !</b><br>Le cristal met son chapeau de fête.',
    acc:'<g transform="translate(50 12) rotate(10)"><path d="M-22 4 L0 -56 L24 4 Z" fill="#ffd54a"/><path d="M-14 -16 L16 -6 L12 4 L-18 -6 Z" fill="#ff4081"/><path d="M-6 -38 L10 -32 L7 -24 L-9 -30 Z" fill="#7df9ff"/><circle cx="0" cy="-58" r="6.5" fill="#fff"/><path d="M-22 4 H24" stroke="#ff4081" stroke-width="4"/></g>'},
- valentin:{nm:'Saint-Valentin',ico:'💘',fx:'💗',up:1,shape:'heart',dates:'7 → 15 fév',msg:'💘 <b>Saint-Valentin !</b><br>Le cristal se transforme en cœur.'},
- paques:{nm:'Pâques',ico:'🐣',fx:'🌸',shape:'egg',dates:'la semaine de Pâques',msg:'🐣 <b>Joyeuses Pâques !</b><br>Le cristal se transforme en œuf.'},
+ valentin:{ev:{rain:'💗',rainName:'PLUIE DE CŒURS',rainColor:'#ff9ec4',gold:'💝',goldName:'Cœur doré',goldIco:'💝',goldMsg:'Un cœur doré est apparu !',surge:'AMOUR',surgeTxt:'Pluie d\'amour',surgeIco:'💘',day:'Mot doux du jour',dayIco:'💌'},nm:'Saint-Valentin',ico:'💘',fx:'💗',up:1,shape:'heart',dates:'7 → 15 fév',msg:'💘 <b>Saint-Valentin !</b><br>Le cristal se transforme en cœur.'},
+ paques:{ev:{rain:'🥚',rainName:'PLUIE D\'ŒUFS',rainColor:'#ffe9a8',gold:'🥚',goldFilter:'sepia(1) saturate(6) hue-rotate(-6deg) brightness(1.15)',goldName:'Œuf d\'or',goldIco:'🥚',goldMsg:'Un œuf d\'or est apparu !',surge:'CHASSE AUX ŒUFS',surgeTxt:'Chasse aux œufs',surgeIco:'🐣',day:'Œuf du jour',dayIco:'🥚'},nm:'Pâques',ico:'🐣',fx:'🌸',shape:'egg',dates:'la semaine de Pâques',msg:'🐣 <b>Joyeuses Pâques !</b><br>Le cristal se transforme en œuf.'},
 };
+// Thème des événements en jeu : par défaut, puis surchargé par la saison en cours
+const EV_DEFAULT={rain:'⭐',rainName:'PLUIE D\'ÉTOILES',rainColor:'#fff3a8',gold:null,goldFilter:'',goldName:'Cristal doré',goldIco:'✨',goldMsg:'Un cristal doré est apparu !',surge:'MILLION',surgeTxt:null,surgeIco:'⚡',day:'Récompense du jour',dayIco:'🎁'};
+const evTheme=()=>{const se=activeSeason();return Object.assign({},EV_DEFAULT,se&&SEASONS[se]&&SEASONS[se].ev||{})};
 const SEASON_ORDER=['halloween','noel','an','valentin','paques'];
 // Date de Pâques (calendrier grégorien, algorithme de Meeus/Jones/Butcher)
 function easterDate(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
@@ -741,7 +745,7 @@ function seasonWelcome(){
 setInterval(renderCrystal,60000); // bascule automatique à minuit
 
 // ---------- Mise à jour automatique ----------
-const VERSION='1.4.2';
+const VERSION='1.5.0';
 $('ver').textContent='Version '+VERSION+' · Éclats Éternels';
 async function applyUpdate(){
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
@@ -760,7 +764,9 @@ async function checkUpdate(){
 setTimeout(checkUpdate,3000);setInterval(checkUpdate,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 
-applyStyle();renderCrystal();seasonWelcome();render();
+applyStyle();renderCrystal();seasonWelcome();
+{const d=dailyReward();if(d)setTimeout(()=>toast(d,5000),off>30?5200:600)}
+render();
 if(DEV)window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave,checkUpdate,VERSION,renderCrystal,setSeason:k=>{previewSeason=k;renderCrystal()},FORMS,SEASONS,seasonOf,easterDate};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();

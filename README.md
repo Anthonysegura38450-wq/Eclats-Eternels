@@ -39,3 +39,14 @@ Le jeu vérifie `version.json` (sans cache) et affiche un bandeau « Nouvelle ve
 - **Événements de saison** (automatiques, selon la date) : 🎃 Halloween (24 oct → 1er nov, chapeau de sorcière), 🎄 Noël (1er → 26 déc, bonnet de Père Noël + neige), 🎆 Nouvel An (27 déc → 3 jan, chapeau de fête), 💘 Saint-Valentin (7 → 15 fév, cœur), 🐣 Pâques (semaine de Pâques, œuf décoré).
 - **Les joueurs ne peuvent pas modifier les événements** : ils suivent uniquement la date de l'appareil. L'aperçu (boutons dans ⚙️ → « Aspect du cristal », adresse `?season=noel`, objet de débogage `window.__ee`) n'existe **qu'en local** (`http://localhost…`), jamais sur le site publié ni dans l'application iOS.
   Pour prévisualiser : `python3 -m http.server` puis `http://localhost:8000/?season=noel` (valeurs : halloween, noel, an, valentin, paques).
+
+## Événements en jeu aux couleurs des fêtes
+Pendant une fête, les événements du jeu changent de thème (mêmes mécaniques, autre habillage) :
+
+| Fête | Pluie d'étoiles → | Cristal doré → | Palier ×10 → | Récompense du jour → |
+|---|---|---|---|---|
+| 🎃 Halloween | Pluie de citrouilles | Citrouille dorée | Nuit d'Halloween | Friandise du jour |
+| 🎄 Noël | Pluie de flocons | Cadeau doré | Magie de Noël | Cadeau de l'Avent |
+| 🎆 Nouvel An | Pluie de confettis | Bouteille dorée | Feu d'artifice | Surprise du jour |
+| 💘 Saint-Valentin | Pluie de cœurs | Cœur doré | Amour | Mot doux du jour |
+| 🐣 Pâques | Pluie d'œufs | Œuf d'or | Chasse aux œufs | Œuf du jour |
