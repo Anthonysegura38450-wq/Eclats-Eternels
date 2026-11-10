@@ -4,6 +4,8 @@ Jeu mobile HTML5 « clicker » (tactile, installable en PWA) : tape le cristal, 
 
 Publication sur l'App Store : voir `docs/PUBLIER-IOS.md`.
 
+Équilibrage : `node tools/simulate.js` joue plusieurs profils de joueurs avec les vraies constantes du jeu ; rapport dans `docs/EQUILIBRAGE.md`.
+
 Lancer : `python3 -m http.server` puis ouvrir `http://localhost:8000` sur mobile (ou héberger sur GitHub Pages).
 Contrôles : glisser (tactile/souris) ou flèches ←/→.
 
