@@ -42,11 +42,14 @@
   #qty{display:flex;gap:6px;padding:0 12px 8px}
   #qty button{flex:1;padding:7px 0;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#fff;font:inherit;font-weight:700;font-size:14px}
   #qty button.on{background:#ffe27d33;border-color:#ffe27d;color:#ffe27d}
+  #tabs button{font-size:14px;padding:9px 4px}
+  .ach{opacity:.55}.ach.done{opacity:1;border-color:#7dffb0;background:#7dffb014}
+  .ach .bar{height:5px;border-radius:4px;background:#ffffff22;margin-top:5px;overflow:hidden}.ach .bar i{display:block;height:100%;background:#7df9ff}
   .sec{margin:10px 2px 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.6}
   .up.own .pr{color:#7dffb0}.up.eq{border-color:#ffe27d;background:#ffe27d18}.up.eq .pr{color:#ffe27d}
   #frz{display:none;position:absolute;bottom:4px;left:0;right:0;text-align:center;font-weight:800;color:#ffb347}
   .rainbow #gem{animation:rb 4s linear infinite}@keyframes rb{to{filter:drop-shadow(0 0 30px #fff8) hue-rotate(360deg)}}
-  #toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:#000c;padding:12px 18px;border-radius:14px;
+  #toast{pointer-events:none;position:fixed;left:50%;top:18%;transform:translateX(-50%);background:#000c;padding:12px 18px;border-radius:14px;
     text-align:center;display:none;max-width:85vw;z-index:9}
 </style>
 </head>
@@ -61,9 +64,10 @@
     <path d="M50 62 4 62 50 2Z" fill="#fff" opacity=".15"/>
   </svg>
 </div>
-<div id="tabs"><button id="t1" class="on">⚒️ Améliorations</button><button id="t2">🛍️ Boutique</button></div>
+<div id="tabs"><button id="t1" class="on">⚒️ Améliorer</button><button id="t2">🛍️ Boutique</button><button id="t3">🏆 Succès</button></div>
 <div id="qty"></div>
 <div id="shop"></div>
+<div id="shop3" style="display:none;flex:1;min-height:0;overflow-y:auto;padding:8px 12px 12px"></div>
 <div id="shop2" style="display:none;flex:1;overflow-y:auto;padding:8px 12px 12px"></div>
 <div id="bar"><button id="rs">Renaissance</button><button id="rst">Tout effacer</button></div>
 <div id="toast"></div>
@@ -98,14 +102,15 @@ const THEMES=[
 ];
 const HEARTS=[{id:'h1',nm:'Cœur de cristal I',price:60000},{id:'h2',nm:'Cœur de cristal II',price:600000},{id:'h3',nm:'Cœur de cristal III',price:6000000}];
 const KEY='ee_clicker';
-let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0};
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
-S.own=Object.assign({ame:1,nuit:1},S.own);
+S.own=Object.assign({ame:1,nuit:1},S.own);S.ach=S.ach||{};
 UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
 
 const frenzyOn=()=>Date.now()<S.frenzy;
 const hearts=()=>HEARTS.filter(h=>S.own[h.id]).length;
-const mult=()=>(1+S.eternity*0.25)*(1+hearts()*0.25)*(frenzyOn()?3:1);
+const achCount=()=>Object.keys(S.ach).length;
+const mult=()=>(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*(frenzyOn()?3:1);
 const cost=u=>Math.ceil(u.base*Math.pow(u.g,S.lv[u.id]));
 let qty=1;
 // coût de n niveaux d'un coup (somme géométrique)
@@ -161,7 +166,7 @@ function addItem(it){
 sec('Boosts');
 addItem({ico:'🔥',nm:'Frénésie',ds:'×3 clics et production pendant 30 s',
   price:frenzyPrice,state:()=>frenzyOn()?'on':'buy',
-  click(){const p=frenzyPrice();if(S.score>=p&&!frenzyOn()){S.score-=p;S.frenzy=Date.now()+30000;vib(40);render();save()}}});
+  click(){const p=frenzyPrice();if(S.score>=p&&!frenzyOn()){S.score-=p;S.frenzy=Date.now()+30000;S.frenzies++;vib(40);render();save()}}});
 sec('Bonus permanents');
 HEARTS.forEach((h,i)=>addItem({ico:'💠',nm:h.nm,ds:'+25 % de production et de clic',price:()=>h.price,
   state:()=>S.own[h.id]?'own':(i>0&&!S.own[HEARTS[i-1].id]?'lock':'buy'),
@@ -175,10 +180,58 @@ THEMES.forEach(k=>addItem({ico:'🌌',nm:k.nm,ds:'Décor de fond',price:()=>k.pr
   state:()=>S.theme===k.id?'eq':S.own[k.id]?'own':'buy',
   click(){if(S.own[k.id]){S.theme=k.id;applyStyle();render();save()}else if(S.score>=k.price){S.score-=k.price;S.own[k.id]=1;S.theme=k.id;applyStyle();vib(30);render();save()}}}));
 
+// ---------- Succès ----------
+const lvAny=n=>UPS.some(u=>S.lv[u.id]>=n);
+const ACH=[
+ {ico:'👆',nm:'Premier éclat',ds:'Tape 1 fois sur le cristal',v:()=>S.clicks,t:1},
+ {ico:'🖐️',nm:'Doigts agiles',ds:'Tape 100 fois',v:()=>S.clicks,t:100},
+ {ico:'💪',nm:'Phalanges d\'acier',ds:'Tape 1 000 fois',v:()=>S.clicks,t:1000},
+ {ico:'🔥',nm:'Tendinite',ds:'Tape 10 000 fois',v:()=>S.clicks,t:10000},
+ {ico:'💎',nm:'Petit trésor',ds:'Cumule 1 000 éclats',v:()=>S.maxTotal,t:1e3},
+ {ico:'💰',nm:'Collectionneur',ds:'Cumule 100 000 éclats',v:()=>S.maxTotal,t:1e5},
+ {ico:'🏦',nm:'Magnat',ds:'Cumule 10 millions d\'éclats',v:()=>S.maxTotal,t:1e7},
+ {ico:'🌠',nm:'Éternel',ds:'Cumule 1 milliard d\'éclats',v:()=>S.maxTotal,t:1e9},
+ {ico:'⚡',nm:'Ça tourne',ds:'Atteins 100 éclats/s',v:()=>baseSec(),t:100},
+ {ico:'🚀',nm:'Usine à cristaux',ds:'Atteins 10 000 éclats/s',v:()=>baseSec(),t:1e4},
+ {ico:'📈',nm:'Spécialiste',ds:'Un niveau 25 sur une amélioration',v:()=>Math.max(...UPS.map(u=>S.lv[u.id])),t:25},
+ {ico:'🏆',nm:'Maître artisan',ds:'Un niveau 100 sur une amélioration',v:()=>Math.max(...UPS.map(u=>S.lv[u.id])),t:100},
+ {ico:'🤝',nm:'Équipe complète',ds:'Possède les 6 améliorations',v:()=>UPS.filter(u=>S.lv[u.id]>0).length,t:6},
+ {ico:'🌟',nm:'Écoute les étoiles',ds:'Achète une Étoile éternelle',v:()=>S.lv.sta,t:1},
+ {ico:'🔥',nm:'Frénétique',ds:'Active la Frénésie 1 fois',v:()=>S.frenzies,t:1},
+ {ico:'🌀',nm:'Accro à la frénésie',ds:'Active la Frénésie 10 fois',v:()=>S.frenzies,t:10},
+ {ico:'💠',nm:'Cœur d\'or',ds:'Achète les 3 Cœurs de cristal',v:()=>hearts(),t:3},
+ {ico:'🎨',nm:'Coquet',ds:'Achète un nouveau style de cristal',v:()=>SKINS.filter(k=>S.own[k.id]).length-1,t:1},
+ {ico:'🌈',nm:'Fashion victim',ds:'Possède tous les styles de cristal',v:()=>SKINS.filter(k=>S.own[k.id]).length,t:SKINS.length},
+ {ico:'🖼️',nm:'Décorateur',ds:'Possède tous les décors',v:()=>THEMES.filter(k=>S.own[k.id]).length,t:THEMES.length},
+ {ico:'♻️',nm:'Renaissance',ds:'Renais 1 fois',v:()=>S.rebirths,t:1},
+ {ico:'✦',nm:'Cycle infini',ds:'Renais 5 fois',v:()=>S.rebirths,t:5},
+];
+ACH.forEach((a,i)=>a.id='a'+i);
+const shop3=$('shop3');
+const achHead=document.createElement('div');achHead.className='sec';shop3.appendChild(achHead);
+ACH.forEach(a=>{const b=document.createElement('div');b.className='up ach';
+  b.innerHTML=`<span class="ico">${a.ico}</span><span style="flex:1"><div class="nm">${a.nm}</div><div class="ds">${a.ds}</div><div class="bar"><i></i></div></span><span class="pr"></span>`;
+  a.el=b;shop3.appendChild(b)});
+function checkAch(){
+  S.maxTotal=Math.max(S.maxTotal,S.total);
+  const got=[];
+  for(const a of ACH){if(!S.ach[a.id]&&a.v()>=a.t){S.ach[a.id]=1;got.push(a)}}
+  if(got.length){vib([60,40,60]);tick(880);
+    toast(got.map(a=>`🏆 <b>${a.nm}</b>`).join('<br>')+'<br><small>+2 % de production par succès</small>',3500);save()}
+}
+function renderAch(){
+  achHead.textContent=`${achCount()} / ${ACH.length} débloqués · bonus +${achCount()*2} %`;
+  for(const a of ACH){const done=!!S.ach[a.id],v=Math.min(a.v(),a.t);
+    a.el.classList.toggle('done',done);
+    a.el.querySelector('.bar').style.display=done?'none':'block';
+    a.el.querySelector('i').style.width=(100*v/a.t)+'%';
+    a.el.querySelector('.pr').textContent=done?'✔':fmt(v)+' / '+fmt(a.t)}
+}
+
 // onglets
-function tab(n){$('qty').style.display=n===1?'flex':'none';$('shop').style.display=n===1?'block':'none';$('shop2').style.display=n===2?'block':'none';
+function tab(n){$('qty').style.display=n===1?'flex':'none';$('shop3').style.display=n===3?'block':'none';$('t3').classList.toggle('on',n===3);$('shop').style.display=n===1?'block':'none';$('shop2').style.display=n===2?'block':'none';
   $('t1').classList.toggle('on',n===1);$('t2').classList.toggle('on',n===2)}
-$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
+$('t3').onclick=()=>tab(3);$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2);
 
 function render(){
   $('score').textContent=fmt(S.score);
@@ -190,6 +243,7 @@ function render(){
     b.classList.toggle('own',st==='own');b.classList.toggle('eq',st==='eq');
     b.disabled=st==='lock'||st==='on'||(st==='buy'&&S.score<p);
     pr.textContent=st==='own'?'Équiper':st==='eq'?'✔ Équipé':st==='lock'?'🔒':st==='on'?'Actif':'💎 '+fmt(p)}
+  renderAch();
   $('rs').textContent=gain()>0?`Renaissance (+${gain()} ✦)`:'Renaissance (dès 10M total)';
   const f=$('frz');if(frenzyOn()){f.style.display='block';f.textContent='🔥 FRÉNÉSIE ×3 — '+Math.ceil((S.frenzy-Date.now())/1000)+'s'}else f.style.display='none';
 }
@@ -198,7 +252,7 @@ function render(){
 $('gem').addEventListener('pointerdown',e=>{
   e.preventDefault();
   let v=perClick();
-  S.score+=v;S.total+=v;
+  S.score+=v;S.total+=v;S.clicks++;
   const g=$('gem');g.classList.add('hit');setTimeout(()=>g.classList.remove('hit'),60);
   const p=document.createElement('div');p.className='pop';p.textContent='+'+fmt(v);
   const r=$('stage').getBoundingClientRect();p.style.left=(e.clientX-r.left-12+(Math.random()*30-15))+'px';p.style.top=(e.clientY-r.top-20)+'px';
@@ -210,23 +264,23 @@ $('gem').addEventListener('pointerdown',e=>{
 // ---------- Boucle ----------
 let lt=performance.now(),acc=0;
 setInterval(()=>{const n=performance.now(),dt=Math.min((n-lt)/1000,1);lt=n;const v=perSec()*dt;S.score+=v;S.total+=v;
-  acc+=dt;if(acc>1){acc=0;save()}render()},100);
+  acc+=dt;if(acc>1){acc=0;save()}checkAch();render()},100);
 
 // Gains hors-ligne (30 %, 4 h max)
 const off=Math.min((Date.now()-S.last)/1000,4*3600);
-if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*off*0.3;S.score+=v;S.total+=v;
+if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*off*0.3;S.score+=v;S.total+=v;
   toast(`Bon retour !<br>Tes cristaux ont produit <b>${fmt(v)}</b> éclats pendant ton absence.`,4500)}
 
 $('rs').onclick=()=>{const g=gain();if(g<1)return alert('Il faut avoir cumulé 10M d\'éclats pour renaître.');
   if(confirm(`Renaître ? Tu perds éclats et améliorations (tes styles et bonus de boutique restent), mais gagnes +${g} ✦ (chaque ✦ = +25 % de production).`)){
-    S.eternity+=g;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);save();render()}};
+    S.eternity+=g;S.rebirths++;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);save();render()}};
 $('rst').onclick=()=>{if(confirm('Tout effacer, y compris ta progression ?')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
 document.addEventListener('visibilitychange',()=>{save();if(!document.hidden){lt=performance.now()}});
 addEventListener('pagehide',save);
 document.addEventListener('dblclick',e=>e.preventDefault());
 
 applyStyle();render();
-window.__ee={S};
+window.__ee={S,checkAch};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
