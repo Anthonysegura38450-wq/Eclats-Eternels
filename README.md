@@ -1,6 +1,6 @@
 # Éclats Éternels
 
-Jeu mobile HTML5 (tactile, installable en PWA). Guide l'esprit lumineux avec ton doigt, attrape les cristaux, évite les éclats maudits ☠️, récupère des cœurs ❤️ et enchaîne les combos.
+Jeu mobile HTML5 « clicker » (tactile, installable en PWA) : tape le cristal, achète des améliorations, laisse-le produire hors-ligne, puis renais pour gagner des bonus d'éternité. L'ancien jeu d'attrape est dans `catcher.html`.
 
 Lancer : `python3 -m http.server` puis ouvrir `http://localhost:8000` sur mobile (ou héberger sur GitHub Pages).
 Contrôles : glisser (tactile/souris) ou flèches ←/→.

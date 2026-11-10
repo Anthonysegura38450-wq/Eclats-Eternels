@@ -8,213 +8,128 @@
 <title>Éclats Éternels</title>
 <link rel="manifest" href="manifest.json">
 <style>
-  html,body{margin:0;height:100%;background:#0b0820;overflow:hidden;touch-action:none;
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0b0820;color:#fff;overflow:hidden;touch-action:manipulation;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
-    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}
-  canvas{display:block;width:100vw;height:100vh;height:100dvh}
-  .overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;padding:24px;background:rgba(11,8,32,.78);backdrop-filter:blur(4px)}
-  .hidden{display:none}
-  h1{font-size:clamp(34px,10vw,56px);margin:0 0 6px;letter-spacing:2px;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{background:radial-gradient(ellipse at 50% 30%,#2a1050,#0b0820 70%);display:flex;flex-direction:column;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #top{text-align:center;padding:14px 12px 0}
+  #score{font-size:clamp(34px,10vw,52px);font-weight:800;
     background:linear-gradient(90deg,#7df9ff,#c77dff,#ff7de0);-webkit-background-clip:text;background-clip:text;color:transparent}
-  p{margin:6px 0;opacity:.85;max-width:320px;line-height:1.4}
-  button{margin-top:22px;font-size:22px;font-weight:700;padding:14px 38px;border:0;border-radius:40px;color:#0b0820;
-    background:linear-gradient(90deg,#7df9ff,#c77dff);box-shadow:0 0 24px #7df9ff88}
-  button:active{transform:scale(.95)}
-  .big{font-size:48px;font-weight:800;margin:8px 0}
+  #rate{opacity:.75;font-size:14px;margin-top:2px}
+  #stage{position:relative;flex:0 0 38%;display:flex;align-items:center;justify-content:center}
+  #gem{width:min(46vw,200px);aspect-ratio:.8;cursor:pointer;transition:transform .06s;filter:drop-shadow(0 0 30px #7df9ffaa)}
+  #gem.hit{transform:scale(.9)}
+  .pop{position:absolute;pointer-events:none;font-weight:800;font-size:24px;color:#ffe27d;text-shadow:0 0 8px #000;
+    animation:up .9s ease-out forwards}
+  @keyframes up{to{transform:translateY(-90px);opacity:0}}
+  #shop{flex:1;overflow-y:auto;padding:8px 12px 12px;-webkit-overflow-scrolling:touch}
+  .up{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 8px;padding:10px 12px;border-radius:14px;border:1px solid #ffffff22;
+    background:#ffffff10;color:#fff;text-align:left;font:inherit}
+  .up:disabled{opacity:.4}
+  .up:not(:disabled):active{background:#7df9ff33;transform:scale(.98)}
+  .ico{font-size:28px;width:36px;text-align:center}
+  .nm{font-weight:700}.ds{font-size:12px;opacity:.7}
+  .pr{margin-left:auto;text-align:right;font-weight:700;color:#7df9ff;white-space:nowrap}
+  .lv{font-size:12px;opacity:.7;font-weight:400;color:#fff}
+  #bar{display:flex;justify-content:center;gap:8px;padding:0 12px 6px;font-size:12px}
+  #bar button{background:none;border:1px solid #ffffff33;color:#ffffffaa;border-radius:20px;padding:5px 12px;font:inherit}
+  #toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:#000c;padding:12px 18px;border-radius:14px;
+    text-align:center;display:none;max-width:85vw;z-index:9}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-
-<div id="menu" class="overlay">
-  <h1>ÉCLATS<br>ÉTERNELS</h1>
-  <p>Glisse ton doigt pour guider l'esprit et attrape les cristaux lumineux.</p>
-  <p>💎 Cristaux = points · ✨ Enchaîne pour un combo<br>☠️ Évite les éclats maudits · ❤️ Attrape les cœurs</p>
-  <p id="best1"></p>
-  <button id="play">JOUER</button>
+<div id="top"><div id="score">0</div><div id="rate"></div></div>
+<div id="stage">
+  <svg id="gem" viewBox="0 0 100 125">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7df9ff"/><stop offset="1" stop-color="#c77dff"/></linearGradient></defs>
+    <path d="M50 2 96 62 50 123 4 62Z" fill="url(#g)"/>
+    <path d="M50 2 96 62 50 62Z" fill="#fff" opacity=".4"/>
+    <path d="M50 62 4 62 50 2Z" fill="#fff" opacity=".15"/>
+  </svg>
 </div>
-
-<div id="over" class="overlay hidden">
-  <h1>FIN</h1>
-  <div class="big" id="final">0</div>
-  <p id="best2"></p>
-  <button id="again">REJOUER</button>
-</div>
+<div id="shop"></div>
+<div id="bar"><button id="rs">Renaissance</button><button id="rst">Tout effacer</button></div>
+<div id="toast"></div>
 
 <script>
 (()=>{
-const cv=document.getElementById('c'),ctx=cv.getContext('2d');
-let W,H,DPR;
-function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
-  cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',resize);resize();
-
 const $=id=>document.getElementById(id);
-const store={get(){try{return +localStorage.getItem('ee_best')||0}catch(e){return 0}},
-  set(v){try{localStorage.setItem('ee_best',v)}catch(e){}}};
-let best=store.get();
-function showBest(){const t=best?`Meilleur score : ${best}`:'';$('best1').textContent=t;$('best2').textContent=t}
-showBest();
+const UPS=[
+ {id:'tap', ico:'👆',nm:'Doigt de lumière',ds:'+1 éclat par clic',base:15,   g:1.15,click:1},
+ {id:'spr', ico:'✨',nm:'Étincelle',      ds:'+1 éclat / s',      base:50,   g:1.15,ps:1},
+ {id:'min', ico:'⛏️',nm:'Mineur de cristal',ds:'+5 éclats / s',   base:300,  g:1.15,ps:5},
+ {id:'gol', ico:'🗿',nm:'Golem de quartz', ds:'+30 éclats / s',   base:2000, g:1.15,ps:30},
+ {id:'dra', ico:'🐉',nm:'Dragon prismatique',ds:'+200 éclats / s',base:15000,g:1.15,ps:200},
+ {id:'sta', ico:'🌟',nm:'Étoile éternelle',ds:'+1500 éclats / s', base:120000,g:1.15,ps:1500},
+];
+const KEY='ee_clicker';
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now()};
+try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
+UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
 
-// Audio minimal (WebAudio, créé après le premier geste)
-let ac;
-function beep(f,d=.12,type='sine',v=.15){
-  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
-    const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;
-    g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);
-    o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+const mult=()=>1+S.eternity*0.5;
+const cost=u=>Math.ceil(u.base*Math.pow(u.g,S.lv[u.id]));
+const perClick=()=>(1+UPS.reduce((a,u)=>a+(u.click||0)*S.lv[u.id],0))*mult();
+const perSec=()=>UPS.reduce((a,u)=>a+(u.ps||0)*S.lv[u.id],0)*mult();
+const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';
+  const s=['k','M','B','T','Qa','Qi'];let i=-1;while(n>=1000&&i<s.length-1){n/=1000;i++}return n.toFixed(n<10?2:1)+s[i]};
+const ETERNITY_AT=1e6;
+const gain=()=>Math.floor(Math.sqrt(S.total/ETERNITY_AT));
+
+// Boutique
+const shop=$('shop');
+UPS.forEach(u=>{const b=document.createElement('button');b.className='up';b.id='u_'+u.id;
+  b.innerHTML=`<span class="ico">${u.ico}</span><span><div class="nm">${u.nm} <span class="lv"></span></div><div class="ds">${u.ds}</div></span><span class="pr"></span>`;
+  b.onclick=()=>{const c=cost(u);if(S.score>=c){S.score-=c;S.lv[u.id]++;vib(15);render();save()}};
+  shop.appendChild(b)});
+
+function render(){
+  $('score').textContent=fmt(S.score);
+  const ps=perSec();
+  $('rate').textContent=`${fmt(ps)} éclats/s · ${fmt(perClick())} par clic`+(S.eternity?` · ×${mult()} éternité`:'');
+  for(const u of UPS){const b=$('u_'+u.id),c=cost(u);b.disabled=S.score<c;
+    b.querySelector('.lv').textContent='niv. '+S.lv[u.id];b.querySelector('.pr').textContent='💎 '+fmt(c)}
+  $('rs').textContent=gain()>0?`Renaissance (+${gain()} ✦)`:'Renaissance (dès 1M total)';
+}
+
+function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
-// État
-let state='menu',score,lives,combo,level,items,parts,stars,t,spawnT,shake,player,targetX,floaters;
-const COLORS=['#7df9ff','#c77dff','#ff7de0','#ffe27d','#7dffb0'];
+let ac;function tick(f){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.06;
+  g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.08);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.08)}catch(e){}}
 
-stars=Array.from({length:70},()=>({x:Math.random(),y:Math.random(),s:Math.random()*1.8+.4,v:Math.random()*.3+.05}));
+// Clic sur le cristal (pointerdown = réactif, multi-touch géré)
+$('gem').addEventListener('pointerdown',e=>{
+  e.preventDefault();const v=perClick();S.score+=v;S.total+=v;
+  const g=$('gem');g.classList.add('hit');setTimeout(()=>g.classList.remove('hit'),60);
+  const p=document.createElement('div');p.className='pop';p.textContent='+'+fmt(v);
+  const r=$('stage').getBoundingClientRect();p.style.left=(e.clientX-r.left-12+(Math.random()*30-15))+'px';p.style.top=(e.clientY-r.top-20)+'px';
+  $('stage').appendChild(p);setTimeout(()=>p.remove(),900);
+  tick(400+Math.random()*300);vib(8);render();
+});
 
-function reset(){
-  score=0;lives=3;combo=0;level=1;items=[];parts=[];floaters=[];t=0;spawnT=0;shake=0;
-  player={x:W/2,y:H-110,r:26};targetX=W/2;
-}
+// Production passive
+let lt=performance.now(),acc=0;
+setInterval(()=>{const n=performance.now(),dt=(n-lt)/1000;lt=n;const v=perSec()*dt;S.score+=v;S.total+=v;
+  acc+=dt;if(acc>1){acc=0;save()}render()},100);
 
-function spawn(){
-  const r=Math.random(),speed=(150+level*22)*(0.85+Math.random()*.4);
-  let type='gem';
-  if(r<.22+Math.min(level*.015,.15))type='bad';
-  else if(r>.97&&lives<5)type='heart';
-  const size=type==='bad'?20:16+Math.random()*8;
-  items.push({type,x:size+Math.random()*(W-size*2),y:-30,vy:speed,size,
-    rot:Math.random()*6,vr:(Math.random()-.5)*4,
-    color:type==='bad'?'#ff2d55':type==='heart'?'#ff5d8f':COLORS[Math.random()*COLORS.length|0],
-    sway:Math.random()*6,pts:type==='gem'?10:0});
-}
+// Gains hors-ligne
+const off=Math.min((Date.now()-S.last)/1000,8*3600);
+if(off>30&&perSec()>0){const v=perSec()*off*0.5;S.score+=v;S.total+=v;
+  const t=$('toast');t.innerHTML=`Bon retour !<br>Tes cristaux ont produit <b>${fmt(v)}</b> éclats pendant ton absence.`;
+  t.style.display='block';setTimeout(()=>t.style.display='none',4500)}
 
-function burst(x,y,color,n=14){
-  for(let i=0;i<n;i++){const a=Math.random()*6.283,s=60+Math.random()*180;
-    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.6+Math.random()*.4,max:1,color,r:2+Math.random()*3})}
-}
+$('rs').onclick=()=>{const g=gain();if(g<1)return alert('Il faut avoir cumulé 1M d\'éclats pour renaître.');
+  if(confirm(`Renaître ? Tu perds tes éclats et améliorations, mais gagnes +${g} ✦ (chaque ✦ = +50 % de production).`)){
+    S.eternity+=g;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);save();render()}};
+$('rst').onclick=()=>{if(confirm('Tout effacer, y compris ta progression ?')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
+document.addEventListener('visibilitychange',save);addEventListener('pagehide',save);
+document.addEventListener('dblclick',e=>e.preventDefault());
 
-function update(dt){
-  t+=dt;level=1+Math.floor(score/150);
-  spawnT-=dt;
-  if(spawnT<=0){spawn();spawnT=Math.max(.28,.85-level*.05)*(0.7+Math.random()*.6)}
-  player.x+=(targetX-player.x)*Math.min(1,dt*14);
-  player.x=Math.max(player.r,Math.min(W-player.r,player.x));
-
-  for(const it of items){
-    it.y+=it.vy*dt;it.rot+=it.vr*dt;it.x+=Math.sin(t*2+it.sway)*20*dt;
-    const dx=it.x-player.x,dy=it.y-player.y;
-    if(!it.dead&&dx*dx+dy*dy<(it.size+player.r)**2){
-      it.dead=true;
-      if(it.type==='gem'){combo++;const gain=it.pts*(1+Math.floor(combo/5));score+=gain;
-        burst(it.x,it.y,it.color);floaters.push({x:it.x,y:it.y,txt:'+'+gain,life:.8,color:it.color});
-        beep(520+Math.min(combo,20)*30,.1,'triangle')}
-      else if(it.type==='heart'){lives=Math.min(5,lives+1);burst(it.x,it.y,it.color,20);beep(880,.25,'sine');
-        floaters.push({x:it.x,y:it.y,txt:'+❤',life:.9,color:'#ff8fb0'})}
-      else{lives--;combo=0;shake=.4;burst(it.x,it.y,'#ff2d55',24);beep(110,.3,'sawtooth',.2);vib(120);
-        if(lives<=0)return gameOver()}
-    }else if(!it.dead&&it.y>H+40){
-      it.dead=true;if(it.type==='gem'&&combo>0){combo=0}
-    }
-  }
-  items=items.filter(i=>!i.dead);
-  for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.life-=dt}
-  parts=parts.filter(p=>p.life>0);
-  for(const f of floaters){f.y-=40*dt;f.life-=dt}
-  floaters=floaters.filter(f=>f.life>0);
-  shake=Math.max(0,shake-dt);
-}
-
-function gem(x,y,s,rot,color,glow=true){
-  ctx.save();ctx.translate(x,y);ctx.rotate(rot);
-  if(glow){ctx.shadowColor=color;ctx.shadowBlur=18}
-  ctx.fillStyle=color;
-  ctx.beginPath();ctx.moveTo(0,-s*1.2);ctx.lineTo(s*.8,0);ctx.lineTo(0,s*1.2);ctx.lineTo(-s*.8,0);ctx.closePath();ctx.fill();
-  ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,.45)';
-  ctx.beginPath();ctx.moveTo(0,-s*1.2);ctx.lineTo(s*.8,0);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
-  ctx.restore();
-}
-
-function draw(){
-  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0b0820');g.addColorStop(1,'#2a1050');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#fff';
-  for(const s of stars){s.y+=s.v*.0016*(state==='play'?1+level*.1:1);if(s.y>1)s.y=0;
-    ctx.globalAlpha=.3+s.s/3;ctx.fillRect(s.x*W,s.y*H,s.s,s.s)}
-  ctx.globalAlpha=1;
-  if(state!=='play'&&state!=='over')return;
-
-  ctx.save();
-  if(shake>0)ctx.translate((Math.random()-.5)*12*shake*2.5,(Math.random()-.5)*12*shake*2.5);
-
-  for(const it of items){
-    if(it.type==='heart'){ctx.save();ctx.font=it.size*2+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.shadowColor=it.color;ctx.shadowBlur=16;ctx.fillText('❤️',it.x,it.y);ctx.restore()}
-    else if(it.type==='bad'){gem(it.x,it.y,it.size,it.rot,'#ff2d55');
-      ctx.save();ctx.translate(it.x,it.y);ctx.fillStyle='#1a0010';ctx.beginPath();
-      ctx.moveTo(0,-it.size*.5);ctx.lineTo(it.size*.3,0);ctx.lineTo(0,it.size*.5);ctx.lineTo(-it.size*.3,0);ctx.fill();ctx.restore()}
-    else gem(it.x,it.y,it.size,it.rot,it.color);
-  }
-  for(const p of parts){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill()}
-  ctx.globalAlpha=1;
-
-  // Joueur : esprit lumineux
-  const px=player.x,py=player.y+Math.sin(t*4)*4;
-  const rg=ctx.createRadialGradient(px,py,2,px,py,player.r*2.2);
-  rg.addColorStop(0,'rgba(255,255,255,.95)');rg.addColorStop(.35,'rgba(125,249,255,.6)');rg.addColorStop(1,'rgba(125,249,255,0)');
-  ctx.fillStyle=rg;ctx.beginPath();ctx.arc(px,py,player.r*2.2,0,6.283);ctx.fill();
-  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px,py,player.r*.55,0,6.283);ctx.fill();
-
-  for(const f of floaters){ctx.globalAlpha=Math.min(1,f.life*2);ctx.fillStyle=f.color;ctx.font='bold 20px system-ui';
-    ctx.textAlign='center';ctx.fillText(f.txt,f.x,f.y)}
-  ctx.globalAlpha=1;ctx.restore();
-
-  // HUD
-  const top=Math.max(18,(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat'))||0)+18);
-  ctx.textBaseline='alphabetic';
-  ctx.fillStyle='#fff';ctx.textAlign='left';ctx.font='bold 28px system-ui';ctx.fillText(score,16,top+22);
-  ctx.font='14px system-ui';ctx.globalAlpha=.7;ctx.fillText('Niveau '+level,16,top+42);ctx.globalAlpha=1;
-  ctx.textAlign='right';ctx.font='22px serif';
-  ctx.fillText('❤️'.repeat(lives),W-16,top+22);
-  if(combo>=3){ctx.textAlign='center';ctx.font='bold 22px system-ui';ctx.fillStyle='#ffe27d';
-    ctx.fillText(`COMBO x${1+Math.floor(combo/5)}  (${combo})`,W/2,top+24)}
-}
-
-let last=0;
-function loop(ts){
-  const dt=Math.min(.05,(ts-last)/1000||0);last=ts;
-  if(state==='play')update(dt);
-  else if(state==='over'){for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.life-=dt}parts=parts.filter(p=>p.life>0)}
-  draw();requestAnimationFrame(loop);
-}
-
-function start(){
-  reset();state='play';$('menu').classList.add('hidden');$('over').classList.add('hidden');beep(660,.15,'triangle');
-}
-function gameOver(){
-  state='over';
-  if(score>best){best=score;store.set(best)}
-  $('final').textContent=score;showBest();
-  setTimeout(()=>$('over').classList.remove('hidden'),500);
-}
-
-// Contrôles : glisser (tactile / souris) + clavier
-function pointer(e){const p=e.touches?e.touches[0]:e;targetX=p.clientX}
-addEventListener('touchstart',e=>{if(state==='play')pointer(e)},{passive:true});
-addEventListener('touchmove',e=>{if(state==='play'){pointer(e);e.preventDefault()}},{passive:false});
-addEventListener('mousemove',e=>{if(state==='play')pointer(e)});
-const keys={};
-addEventListener('keydown',e=>{keys[e.key]=1});addEventListener('keyup',e=>{keys[e.key]=0});
-setInterval(()=>{if(state!=='play')return;if(keys.ArrowLeft)targetX-=14;if(keys.ArrowRight)targetX+=14;
-  targetX=Math.max(0,Math.min(W,targetX))},16);
-$('play').onclick=start;$('again').onclick=start;
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='menu';$('menu').classList.remove('hidden')}});
-
-reset();requestAnimationFrame(loop);
-window.__ee={get state(){return state},get score(){return score},get lives(){return lives},
-  setX(x){targetX=x},get items(){return items},get player(){return player}};
-
+render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
