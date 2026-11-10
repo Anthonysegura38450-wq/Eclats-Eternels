@@ -76,7 +76,7 @@
 (()=>{
 const $=id=>document.getElementById(id);
 const UPS=[
- {id:'tap',ico:'👆',nm:'Doigt de lumière',   ds:'+1 éclat par clic',base:40,    g:1.40,click:1},
+ {id:'tap',ico:'👆',nm:'Doigt de lumière',   ds:'+1 éclat par clic',base:40,    g:1.17,click:1},
  {id:'spr',ico:'✨',nm:'Étincelle',          ds:'+1 éclat / s',     base:120,   g:1.25,ps:1},
  {id:'min',ico:'⛏️',nm:'Mineur de cristal',  ds:'+5 éclats / s',    base:1200,  g:1.25,ps:5},
  {id:'gol',ico:'🗿',nm:'Golem de quartz',    ds:'+30 éclats / s',   base:14000, g:1.25,ps:30},
@@ -100,9 +100,21 @@ const THEMES=[
  {id:'aby', nm:'Abysses',b:['#0b3a8a','#020617'],price:1500000},
  {id:'cos', nm:'Nébuleuse',b:['#7a1f6b','#0a0320'],price:10000000},
 ];
+// ---- Paiements (Stripe Payment Links) ----
+// LIVE=false : liens de TEST (aucun vrai paiement). Pour la vente réelle, remplacer les url par les liens "live" et passer LIVE à true.
+const LIVE=false;
+const PACKS=[
+ {id:'s',gems:100, label:'0,99 €',url:'https://buy.stripe.com/test_eVq28s3sMgJgbfPdew8Vi00'},
+ {id:'m',gems:600, label:'4,99 €',url:'https://buy.stripe.com/test_dRmeVed3makS3NneiA8Vi01',tag:'Populaire'},
+ {id:'l',gems:1400,label:'9,99 €',url:'https://buy.stripe.com/test_28E3cw2oIakS97HfmE8Vi02',tag:'Meilleure offre'},
+];
+const PRISMS=[
+ {id:'p1',nm:'Prisme I',price:100},{id:'p2',nm:'Prisme II',price:250},{id:'p3',nm:'Prisme III',price:500},
+ {id:'p4',nm:'Prisme IV',price:1000},{id:'p5',nm:'Prisme V',price:2000},
+];
 const HEARTS=[{id:'h1',nm:'Cœur de cristal I',price:60000},{id:'h2',nm:'Cœur de cristal II',price:600000},{id:'h3',nm:'Cœur de cristal III',price:6000000}];
 const KEY='ee_clicker';
-let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,paid:{},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
 S.own=Object.assign({ame:1,nuit:1},S.own);S.ach=S.ach||{};
 UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
@@ -110,7 +122,8 @@ UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
 const frenzyOn=()=>Date.now()<S.frenzy;
 const hearts=()=>HEARTS.filter(h=>S.own[h.id]).length;
 const achCount=()=>Object.keys(S.ach).length;
-const mult=()=>(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*(frenzyOn()?3:1);
+const prisms=()=>PRISMS.filter(x=>S.own[x.id]).length;
+const mult=()=>(1+prisms()*0.1)*(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*(frenzyOn()?3:1);
 const cost=u=>Math.ceil(u.base*Math.pow(u.g,S.lv[u.id]));
 let qty=1;
 // coût de n niveaux d'un coup (somme géométrique)
@@ -163,6 +176,13 @@ function addItem(it){
   const b=document.createElement('button');b.className='up';
   b.innerHTML=`<span class="ico">${it.ico}</span><span><div class="nm">${it.nm}</div><div class="ds">${it.ds}</div></span><span class="pr"></span>`;
   b.onclick=()=>it.click();it.el=b;items.push(it);shop2.appendChild(b)}
+sec('💠 Gemmes'+(LIVE?'':' — mode test (aucun vrai paiement)'));
+PACKS.forEach(k=>addItem({ico:'💠',nm:k.gems.toLocaleString('fr-FR')+' gemmes',ds:(k.tag?k.tag+' · ':'')+'Paiement sécurisé par Stripe',label:k.label,free:1,
+  price:()=>0,state:()=>'buy',click(){location.href=k.url}}));
+sec('Bonus à gemmes (permanents)');
+PRISMS.forEach((x,i)=>addItem({ico:'🔷',nm:x.nm,ds:'+10 % de production et de clic',cur:'gem',price:()=>x.price,
+  state:()=>S.own[x.id]?'done':(i>0&&!S.own[PRISMS[i-1].id]?'lock':'buy'),
+  click(){if(S.own[x.id]||(i>0&&!S.own[PRISMS[i-1].id]))return;if(S.gems>=x.price){S.gems-=x.price;S.own[x.id]=1;vib(30);render();save()}}}));
 sec('Boosts');
 addItem({ico:'🔥',nm:'Frénésie',ds:'×3 clics et production pendant 30 s',
   price:frenzyPrice,state:()=>frenzyOn()?'on':'buy',
@@ -235,14 +255,16 @@ $('t3').onclick=()=>tab(3);$('t1').onclick=()=>tab(1);$('t2').onclick=()=>tab(2)
 
 function render(){
   $('score').textContent=fmt(S.score);
-  $('rate').textContent=`${fmt(perSec())} éclats/s · ${fmt(perClick())} par clic`+(S.eternity?` · ✦${S.eternity}`:'');
+  $('rate').textContent=`${fmt(perSec())} éclats/s · ${fmt(perClick())} par clic`+(S.eternity?` · ✦${S.eternity}`:'')+(S.gems?` · 💠 ${S.gems}`:'');
   for(const u of UPS){const b=$('u_'+u.id),n=wantN(u),c=costN(u,n);b.disabled=S.score<c;
     b.querySelector('.lv').textContent='niv. '+S.lv[u.id]+(n>1?' → '+(S.lv[u.id]+n):'');
     b.querySelector('.pr').innerHTML='💎 '+fmt(c)+(n>1?`<div class="lv">+${n} niveaux</div>`:'')}
   for(const it of items){const st=it.state(),p=it.price(),b=it.el,pr=b.querySelector('.pr');
     b.classList.toggle('own',st==='own');b.classList.toggle('eq',st==='eq');
-    b.disabled=st==='lock'||st==='on'||(st==='buy'&&S.score<p);
-    pr.textContent=st==='own'?'Équiper':st==='eq'?'✔ Équipé':st==='lock'?'🔒':st==='on'?'Actif':'💎 '+fmt(p)}
+    const bal=it.cur==='gem'?S.gems:S.score;
+    b.disabled=st==='lock'||st==='on'||st==='done'||(st==='buy'&&!it.free&&bal<p);
+    b.classList.toggle('own',st==='own'||st==='done');
+    pr.textContent=st==='done'?'✔ Acquis':st==='own'?'Équiper':st==='eq'?'✔ Équipé':st==='lock'?'🔒':st==='on'?'Actif':it.label?it.label:(it.cur==='gem'?'💠 ':'💎 ')+fmt(p)}
   renderAch();
   $('rs').textContent=gain()>0?`Renaissance (+${gain()} ✦)`:'Renaissance (dès 10M total)';
   const f=$('frz');if(frenzyOn()){f.style.display='block';f.textContent='🔥 FRÉNÉSIE ×3 — '+Math.ceil((S.frenzy-Date.now())/1000)+'s'}else f.style.display='none';
@@ -268,7 +290,7 @@ setInterval(()=>{const n=performance.now(),dt=Math.min((n-lt)/1000,1);lt=n;const
 
 // Gains hors-ligne (30 %, 4 h max)
 const off=Math.min((Date.now()-S.last)/1000,4*3600);
-if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*off*0.3;S.score+=v;S.total+=v;
+if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*(1+achCount()*0.02)*(1+prisms()*0.1)*off*0.3;S.score+=v;S.total+=v;
   toast(`Bon retour !<br>Tes cristaux ont produit <b>${fmt(v)}</b> éclats pendant ton absence.`,4500)}
 
 $('rs').onclick=()=>{const g=gain();if(g<1)return alert('Il faut avoir cumulé 10M d\'éclats pour renaître.');
@@ -278,6 +300,12 @@ $('rst').onclick=()=>{if(confirm('Tout effacer, y compris ta progression ?')){tr
 document.addEventListener('visibilitychange',()=>{save();if(!document.hidden){lt=performance.now()}});
 addEventListener('pagehide',save);
 document.addEventListener('dblclick',e=>e.preventDefault());
+
+// Retour de Stripe : ?pack=m&sid=cs_...
+try{const q=new URLSearchParams(location.search),pk=PACKS.find(x=>x.id===q.get('pack')),sid=q.get('sid')||'';
+  const okSid=new RegExp('^cs_'+(LIVE?'live':'test')+'_[A-Za-z0-9]{10,}$').test(sid);
+  if(pk&&okSid&&!S.paid[sid]){S.paid[sid]=1;S.gems+=pk.gems;save();setTimeout(()=>toast(`💠 Merci ! <b>+${pk.gems} gemmes</b> ajoutées.`,5000),300)}
+  if(q.has('pack'))history.replaceState(null,'',location.pathname)}catch(e){}
 
 applyStyle();render();
 window.__ee={S,checkAch};
