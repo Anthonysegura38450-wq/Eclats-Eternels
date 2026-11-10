@@ -19,3 +19,5 @@ Contrôles : glisser (tactile/souris) ou flèches ←/→.
 
 ## Paramètres
 Engrenage ⚙️ en haut à droite : Renaissance (avec aperçu du gain), sons, vibrations, statistiques de la partie, effacement de la progression (double confirmation) et lien vers la politique de confidentialité.
+
+_Version courante : 1.1_
