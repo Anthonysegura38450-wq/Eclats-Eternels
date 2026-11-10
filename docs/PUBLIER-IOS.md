@@ -13,7 +13,7 @@
 | Politique de confidentialité et page d'assistance | `privacy.html`, `support.html` (publiées via GitHub Pages) |
 
 ## À compléter avant d'envoyer
-1. **Adresse e-mail de contact** dans `privacy.html` et `support.html` (cherche `À COMPLÉTER`). Apple la vérifie.
+1. ~~Adresse e-mail de contact~~ : renseignée dans `privacy.html` et `support.html`. Apple la vérifie : garde-la valide.
 2. **Identifiant de l'app** (`appId`) dans `capacitor.config.json` : actuellement `com.eclatseternels.game`. Il **ne pourra plus être changé** une fois l'app créée sur App Store Connect.
 3. Vérifier que `https://anthonysegura38450-wq.github.io/Eclats-Eternels/privacy.html` s'ouvre bien.
 
