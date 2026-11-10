@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#7cc8f5">
+  <meta name="description" content="Éclats Éternels : bâtis ton royaume sur une île flottante, entraîne ton armée et chasse les Ombres.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Éclats Éternels</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="world" aria-label="Carte du royaume"></canvas>
+
+  <header class="top">
+    <button class="level" id="levelBtn" type="button" aria-label="Niveau">
+      <span class="lvl-num" id="lvlNum">1</span>
+      <span class="xp"><span class="xp-fill" id="xpFill"></span></span>
+    </button>
+    <div class="res" id="resBar"></div>
+  </header>
+
+  <button class="quest" id="questBanner" type="button">
+    <span class="quest-ico">📜</span>
+    <span class="quest-text" id="questText">…</span>
+  </button>
+
+  <nav class="bottom" id="bottomBar">
+    <button class="round" data-act="openBuild" type="button"><span>🏗️</span>Construire</button>
+    <button class="round" data-act="openArmy" type="button"><span>⚔️</span>Armée</button>
+    <button class="round" data-act="openExpedition" type="button"><span>🗺️</span>Expéditions</button>
+    <button class="round" data-act="openQuests" type="button"><span>📜</span>Quêtes</button>
+    <button class="round" data-act="openSettings" type="button"><span>⚙️</span>Options</button>
+  </nav>
+
+  <div class="place-bar" id="placeBar" hidden>
+    <div class="place-info" id="placeInfo"></div>
+    <div class="place-actions">
+      <button class="btn" data-act="cancelPlace" type="button">✕ Annuler</button>
+      <button class="btn ok" data-act="confirmPlace" id="placeOk" type="button">✓ Placer</button>
+    </div>
+  </div>
+
+  <section class="expedition" id="expedition" hidden>
+    <header class="exp-head">
+      <h2>🗺️ Expéditions</h2>
+      <p>Libère les îles envahies par les Ombres, une à une.</p>
+      <button class="sheet-close" data-act="closeExpedition" type="button" aria-label="Fermer">✕</button>
+    </header>
+    <div class="exp-map" id="expMap"></div>
+    <footer class="exp-foot">
+      <div class="exp-army" id="expArmy"></div>
+      <button class="btn" data-act="openArmy" type="button">⚔️ Armée</button>
+      <button class="btn ok" data-act="closeExpedition" type="button">🏰 Royaume</button>
+    </footer>
+  </section>
+
+  <section class="sheet" id="sheet" hidden>
+    <button class="sheet-close" data-act="closeSheet" type="button" aria-label="Fermer">✕</button>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <div class="battle" id="battle" hidden>
+    <div class="battle-box">
+      <h2 id="bTitle">Bataille</h2>
+      <div class="arena">
+        <div class="side">
+          <div class="troops" id="bTroops"></div>
+          <div class="hp"><div id="bArmyHp"></div></div>
+          <div class="hp-label" id="bArmyLabel"></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="side">
+          <div class="foe" id="bFoe"></div>
+          <div class="hp foe-hp"><div id="bFoeHp"></div></div>
+          <div class="hp-label" id="bFoeLabel"></div>
+        </div>
+      </div>
+      <div class="battle-log" id="bLog"></div>
+      <div class="battle-result" id="bResult" hidden></div>
+      <button class="btn ok big" id="bClose" data-act="closeBattle" type="button" hidden>Continuer</button>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
