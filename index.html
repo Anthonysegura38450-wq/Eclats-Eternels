@@ -313,7 +313,7 @@ function applyStyle(){
   $('gem').style.filter=`drop-shadow(0 0 30px ${own.glow})`;
   document.body.classList.toggle('rainbow',!!sk.rainbow);
   document.documentElement.style.setProperty('--bg1',th.b[0]);document.documentElement.style.setProperty('--bg2',th.b[1]);
-  $('top') && document.querySelector('meta[name=theme-color]').setAttribute('content',th.b[1]);
+  {const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',th.b[1])}
 }
 
 // ---------- Boutique : améliorations ----------
@@ -745,7 +745,7 @@ function seasonWelcome(){
 setInterval(renderCrystal,60000); // bascule automatique à minuit
 
 // ---------- Mise à jour automatique ----------
-const VERSION='1.5.0';
+const VERSION='1.5.1';
 $('ver').textContent='Version '+VERSION+' · Éclats Éternels';
 async function applyUpdate(){
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
