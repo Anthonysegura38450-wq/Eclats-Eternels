@@ -532,7 +532,7 @@ function renderSettings(){
     ? `Si tu renais maintenant : <b>+${g} ✦</b> et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.<br>Tu as déjà ✦ ${S.eternity} (×${(1+S.eternity*0.25).toFixed(2)}). Chaque ✦ demande plus d'éclats que le précédent.`
     : `Prochain ✦ à <b>${fmt(hi)}</b> éclats cumulés sur toute ta vie : tu en es à ${fmt(lifeTotal())} (encore ${fmt(Math.max(0,hi-lifeTotal()))}).`;
   renderForms();
-  $('rs').disabled=g<1;$('rs').textContent=g>=1?`Renaître (+${g} ✦)`:'Pas encore possible';
+  {const t=g>=1?`Renaître (+${g} ✦)`:'Pas encore possible';$('rs').disabled=g<1;if($('rs').textContent!==t)$('rs').textContent=t}
   $('sw_sound').classList.toggle('on',!!S.opt.sound);$('sw_vib').classList.toggle('on',!!S.opt.vib);
   $('stats').innerHTML=[['Clics',S.clicks],['Éclats cumulés',fmt(S.maxTotal)],['Succès',`${achCount()} / ${ACH.length}`],['Renaissances',S.rebirths],['Cristaux dorés',S.golds],['Étoiles',S.stars]]
     .map(x=>`<div>${x[0]}<b>${typeof x[1]==='number'?x[1].toLocaleString('fr-FR'):x[1]}</b></div>`).join('');
@@ -725,16 +725,20 @@ function renderCrystal(){
   renderFx(se,Math.min(3,Math.floor(S.rebirths/3)));
 }
 function renderForms(){
+  // Appelée toutes les 0,1 s tant que le panneau est ouvert : on ne reconstruit QUE si quelque chose a changé,
+  // sinon un bouton remplacé entre la pose et le relevé du doigt perd son clic.
+  const cs=activeSeason(),key=[S.rebirths,previewSeason,cs,S.skin,S.theme].join('|');
+  const chips=$('seasonChips');
+  if(DEV&&!chips.children.length){ // aperçu réservé au développement local : boutons créés une seule fois
+    chips.innerHTML=['auto',...SEASON_ORDER,'none'].map(k=>`<button class="chip" data-k="${k}">${k==='auto'?'Auto':k==='none'?'Aucun':SEASONS[k].ico+' '+SEASONS[k].nm}</button>`).join('');
+    chips.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{previewSeason=b.dataset.k;renderCrystal();renderForms()});
+  }else if(!DEV)chips.style.display='none';
+  if(DEV)chips.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',previewSeason===b.dataset.k));
+  if(renderForms.key===key)return;renderForms.key=key;
   const cur=S.rebirths%FORMS.length;
   $('faspect').innerHTML=`Pierre actuelle : <b>${FORMS[cur].nm}</b>. Ton cristal devient une nouvelle pierre précieuse à chaque renaissance${S.rebirths>=3?', et un halo l\'entoure toutes les 3 renaissances':''}. Si tu équipes un style de la boutique, il remplace la couleur naturelle.`;
   $('forms').innerHTML=FORMS.map((f,i)=>{const got=S.rebirths>=i||S.rebirths>=FORMS.length;
     return `<div style="text-align:center"><svg viewBox="-4 -4 108 133" class="${i===cur?'cur':''}"><defs><linearGradient id="fg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${f.c[0]}"/><stop offset="1" stop-color="${f.c[1]}"/></linearGradient></defs><title>${got?f.nm:'?'}</title><path d="${f.d}" fill="${got?`url(#fg${i})`:'#ffffff14'}" stroke="${i===cur?'#ffe27d':got?'none':'#ffffff30'}" stroke-width="${i===cur?4:3}" ${got?'':'stroke-dasharray="6 5"'}/>${got?`<path d="${f.f}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="${(f.fw||1.5)*1.6}" stroke-linecap="round" stroke-linejoin="round"/>`:''}</svg><div style="font-size:9px;opacity:.7;margin-top:2px">${got?f.nm:'?'}</div></div>`}).join('');
-  const act=seasonOf(new Date());
-  if(DEV){ // aperçu réservé au développement local
-    $('seasonChips').innerHTML=['auto',...SEASON_ORDER,'none'].map(k=>`<button class="chip${previewSeason===k?' on':''}" data-k="${k}">${k==='auto'?'Auto':k==='none'?'Aucun':SEASONS[k].ico+' '+SEASONS[k].nm}</button>`).join('');
-    $('seasonChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{previewSeason=b.dataset.k;renderCrystal();renderForms()});
-  }else $('seasonChips').style.display='none';
-  const cs=activeSeason();
   $('seasonInfo').innerHTML=(DEV&&previewSeason!=='auto'?'<b>Aperçu en cours.</b> ':'')+(cs?`Événement : <b>${SEASONS[cs].ico} ${SEASONS[cs].nm}</b>.`:'Aucun événement en ce moment.')+'<br><small style="opacity:.7">'+SEASON_ORDER.map(k=>SEASONS[k].ico+' '+SEASONS[k].nm+' : '+SEASONS[k].dates).join(' · ')+'</small>';
 }
 // Annonce à la première ouverture pendant un événement
@@ -745,7 +749,7 @@ function seasonWelcome(){
 setInterval(renderCrystal,60000); // bascule automatique à minuit
 
 // ---------- Mise à jour automatique ----------
-const VERSION='1.5.1';
+const VERSION='1.5.2';
 $('ver').textContent='Version '+VERSION+' · Éclats Éternels';
 async function applyUpdate(){
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
