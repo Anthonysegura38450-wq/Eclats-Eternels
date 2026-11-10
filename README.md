@@ -9,7 +9,7 @@ Contrôles : glisser (tactile/souris) ou flèches ←/→.
 100 % gratuites : +10 💠 par succès débloqué et +10 💠 par ✦ gagné à la renaissance. Elles s'échangent contre cinq « Prismes » (+10 % de production et de clic chacun).
 
 ## Événements spéciaux
-- ⚡ **Million** : chaque million d'éclats atteint déclenche un ×10 de production pendant 5 minutes.
+- ⚡ **Million** : les paliers 1M, 5M, 25M, 125M… d'éclats déclenchent chacun un ×10 de production pendant 5 minutes.
 - ✨ **Cristal doré** : apparaît au hasard, à toucher dans les 8 s (éclats, Frénésie ou gemmes).
 - 🌠 **Pluie d'étoiles** : des étoiles tombent sur l'écran, chacune touchée rapporte des éclats.
 - 🎁 **Récompense quotidienne** : série de 7 jours (éclats + gemmes, gros bonus au jour 7).

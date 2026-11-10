@@ -113,6 +113,7 @@ const THEMES=[
  {id:'cos', nm:'Nébuleuse',b:['#7a1f6b','#0a0320'],price:10000000},
 ];
 // ---- Gemmes : 100 % gratuites, gagnées en jouant (succès et renaissances) ----
+const MIL_STEP=5; // paliers du ×10 : 1M, 5M, 25M, 125M… (chaque palier = 5× le précédent)
 const GEMS_PER_ACH=10,GEMS_PER_ETERNITY=10;
 const PRISMS=[
  {id:'p1',nm:'Prisme I',price:20},{id:'p2',nm:'Prisme II',price:50},{id:'p3',nm:'Prisme III',price:100},
@@ -247,9 +248,10 @@ function checkAch(){
   S.maxTotal=Math.max(S.maxTotal,S.total);
   // Événement : chaque million d'éclats gagnés => ×10 pendant 5 minutes
   if(S.total>=S.nextMil){
-    const m=Math.floor(S.total/1e6);S.nextMil=(m+1)*1e6;
+    let reached=S.nextMil;while(S.nextMil<=S.total){reached=S.nextMil;S.nextMil*=MIL_STEP}
     if(!surgeOn()){S.surge=Date.now()+300000;vib([80,40,80]);tick(1200);
-      toast(`⚡ <b>${fmt(m*1e6)} éclats atteints !</b><br>Production ×10 pendant 5 minutes !`,4500);save()}
+      toast(`⚡ <b>${fmt(reached)} éclats atteints !</b><br>Production ×10 pendant 5 minutes !<br><small>Prochain palier : ${fmt(S.nextMil)}</small>`,4500)}
+    save()
   }
   const got=[];
   for(const a of ACH){if(!S.ach[a.id]&&a.v()>=a.t){S.ach[a.id]=1;got.push(a)}}
