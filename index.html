@@ -81,6 +81,27 @@
   #upd{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:40;display:flex;align-items:center;gap:10px;
     padding:10px 12px;border-radius:16px;background:linear-gradient(90deg,#ffe27d,#ffb347);color:#2a1050;font-weight:700;font-size:14px;box-shadow:0 8px 30px #000a}
   #upd span{flex:1}#upd button{border:0;border-radius:12px;padding:9px 14px;background:#2a1050;color:#ffe27d;font:inherit;font-weight:800;font-size:14px}
+  #stage.hatted{padding-top:68px;box-sizing:border-box}
+  #stage.hatted #gem{width:min(38vw,165px)}
+  #aura{position:absolute;left:50%;top:50%;width:min(78vw,330px);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none}
+  #aura i{position:absolute;border-radius:50%;border:2px dashed #ffffff3d;animation:spin 24s linear infinite}
+  #aura i:nth-child(2){inset:12%;border-color:#ffe27d55;animation-duration:32s;animation-direction:reverse}
+  #aura i:nth-child(3){inset:24%;border-color:#7df9ff55;animation-duration:18s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .born{animation:born .9s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes born{from{transform:scale(.2) rotate(-200deg);opacity:0}to{transform:none;opacity:1}}
+  #fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+  .fxp{position:absolute;top:-40px;opacity:.8;animation:fxfall linear infinite}
+  .fxp.rise{top:auto;bottom:-40px;animation-name:fxrise}
+  @keyframes fxfall{to{transform:translate3d(30px,110vh,0) rotate(220deg)}}
+  @keyframes fxrise{to{transform:translate3d(-30px,-110vh,0) rotate(-40deg)}}
+  .forms{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 6px;margin:10px 0 2px}
+  .forms svg{max-width:46px}
+  .forms svg{width:100%;height:auto;overflow:visible}
+  .forms .cur{filter:drop-shadow(0 0 6px #ffe27d)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{padding:8px 11px;border-radius:12px;border:1px solid #ffffff2a;background:#ffffff10;color:#fff;font:inherit;font-size:15px}
+  .chip.on{border-color:#ffe27d;background:#ffe27d22}
   .ta{width:100%;height:110px;margin-top:8px;border-radius:12px;border:1px solid #ffffff2a;background:#0b0820;color:#cfe;font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:none;word-break:break-all;-webkit-user-select:text;user-select:text}
   .two{display:flex;gap:10px}.two .btn{margin-top:10px}
   #tuto{position:fixed;z-index:25;max-width:280px;pointer-events:none;display:none;background:#ffe27d;color:#2a1050;border-radius:14px;padding:10px 12px;font-weight:700;font-size:14px;line-height:1.35;box-shadow:0 6px 24px #000a}
@@ -108,11 +129,26 @@
 <div id="top"><div id="score">0</div><div id="rate"></div></div>
 <div id="stage">
   <div id="frz"></div>
-  <svg id="gem" viewBox="0 0 100 125">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop id="s1" offset="0" stop-color="#7df9ff"/><stop id="s2" offset="1" stop-color="#c77dff"/></linearGradient></defs>
-    <path d="M50 2 96 62 50 123 4 62Z" fill="url(#g)"/>
-    <path d="M50 2 96 62 50 62Z" fill="#fff" opacity=".4"/>
-    <path d="M50 62 4 62 50 2Z" fill="#fff" opacity=".15"/>
+  <div id="aura"></div>
+  <svg id="gem" viewBox="0 0 100 125" style="overflow:visible">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop id="s1" offset="0" stop-color="#7df9ff"/><stop id="s2" offset="1" stop-color="#c77dff"/></linearGradient>
+      <linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9ec4"/><stop offset="1" stop-color="#e0245e"/></linearGradient>
+      <linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff9ccf"/></linearGradient>
+      <linearGradient id="gh" x1="0" y1="0" x2=".75" y2=".75"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="gs" x1="0" y1=".45" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+      <clipPath id="cp"><path id="cpp" d=""/></clipPath>
+    </defs>
+    <path id="cs" d="" fill="url(#g)"/>
+    <g id="stripes" clip-path="url(#cp)" style="display:none">
+      <path d="M-5 44 l12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-5 78 l12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12 12.5 12 12.5 -12" fill="none" stroke="#7df9ff" stroke-width="7" stroke-linejoin="round"/>
+      <g fill="#fff"><circle cx="22" cy="100" r="4"/><circle cx="40" cy="106" r="4"/><circle cx="60" cy="106" r="4"/><circle cx="78" cy="100" r="4"/><circle cx="50" cy="20" r="4"/></g>
+    </g>
+    <path id="ch" d="" fill="url(#gh)"/>
+    <path id="cd" d="" fill="url(#gs)"/>
+    <path id="cf" d="" fill="none" stroke="#fff" stroke-opacity=".42" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <g id="acc"></g>
   </svg>
 </div>
 <div id="tabs"><button id="t1" class="on">⚒️ Améliorer</button><button id="t2">🛍️ Boutique</button><button id="t3">🏆 Succès</button></div>
@@ -134,6 +170,15 @@
   <div class="card"><h3>Préférences</h3>
     <div class="row"><span>🔊 Sons</span><button class="sw" id="sw_sound" aria-label="Sons"></button></div>
     <div class="row"><span>📳 Vibrations</span><button class="sw" id="sw_vib" aria-label="Vibrations"></button></div>
+  </div>
+
+  <div class="card"><h3>💎 Aspect du cristal</h3>
+    <p id="faspect"></p>
+    <div class="forms" id="forms"></div>
+    <h3 style="margin-top:14px">🎉 Événements de saison</h3>
+    <p>Le cristal se déguise à certaines dates. Aperçu temporaire (il disparaît quand tu fermes le jeu) :</p>
+    <div class="chips" id="seasonChips"></div>
+    <p id="seasonInfo" style="margin-top:8px"></p>
   </div>
 
   <div class="card"><h3>Ta partie</h3>
@@ -165,6 +210,7 @@
   <h2 id="dt"></h2><p id="dp"></p>
   <div class="two"><button class="btn ghost" id="dno">Annuler</button><button class="btn" id="dok">OK</button></div>
 </div></div>
+<div id="fx"></div>
 <div id="ev"></div>
 <div id="toast"></div>
 
@@ -205,7 +251,7 @@ const PRISMS=[
 ];
 const HEARTS=[{id:'h1',nm:'Cœur de cristal I',price:60000},{id:'h2',nm:'Cœur de cristal II',price:600000},{id:'h3',nm:'Cœur de cristal III',price:6000000}];
 const KEY='ee_clicker';
-let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,surge:0,nextMil:1e6,golds:0,stars:0,daily:{d:'',n:0},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{},tuto:-1};
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,surge:0,nextMil:1e6,golds:0,stars:0,daily:{d:'',n:0},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{},tuto:-1,seasonSeen:''};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
 S.own=Object.assign({ame:1,nuit:1},S.own);S.opt=Object.assign({sound:1,vib:1},S.opt||{});
 if(S.tuto===-1)S.tuto=(S.total<500&&S.clicks<30)?0:99; // les joueurs existants n'ont pas besoin du tutorielS.ach=S.ach||{};
@@ -250,13 +296,18 @@ const vib=ms=>{
 let ac;function tick(f){if(!S.opt.sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
   const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.06;
   g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.08);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.08)}catch(e){}}
-function toast(h,ms=3500){const t=$('toast');t.innerHTML=h;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',ms)}
+// Les messages s'empilent (3 au plus) au lieu de s'écraser entre eux
+function toast(h,ms=3500){const now=Date.now(),t=$('toast');
+  toast.l=(toast.l||[]).filter(x=>x.e>now);toast.l.push({h,e:now+ms});if(toast.l.length>3)toast.l.shift();
+  t.innerHTML=toast.l.map(x=>x.h).join('<div style="height:1px;background:#ffffff26;margin:8px 0"></div>');t.style.display='block';
+  clearTimeout(toast.t);toast.t=setTimeout(()=>{t.style.display='none';toast.l=[]},Math.max(...toast.l.map(x=>x.e))-now)}
 
 // ---------- Styles ----------
 function applyStyle(){
   const sk=SKINS.find(x=>x.id===S.skin)||SKINS[0],th=THEMES.find(x=>x.id===S.theme)||THEMES[0];
-  $('s1').setAttribute('stop-color',sk.c[0]);$('s2').setAttribute('stop-color',sk.c[1]);
-  $('gem').style.filter=`drop-shadow(0 0 30px ${sk.glow})`;
+  const gm=FORMS[S.rebirths%FORMS.length],own=S.skin==='ame'?gm:sk; // style par défaut = couleur naturelle de la pierre
+  $('s1').setAttribute('stop-color',own.c[0]);$('s2').setAttribute('stop-color',own.c[1]);
+  $('gem').style.filter=`drop-shadow(0 0 30px ${own.glow})`;
   document.body.classList.toggle('rainbow',!!sk.rainbow);
   document.documentElement.style.setProperty('--bg1',th.b[0]);document.documentElement.style.setProperty('--bg2',th.b[1]);
   $('top') && document.querySelector('meta[name=theme-color]').setAttribute('content',th.b[1]);
@@ -477,6 +528,7 @@ function renderSettings(){
   $('rinfo').innerHTML=g>=1
     ? `Si tu renais maintenant : <b>+${g} ✦</b> et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.<br>Tu as déjà ✦ ${S.eternity} (×${(1+S.eternity*0.25).toFixed(2)}). Chaque ✦ demande plus d'éclats que le précédent.`
     : `Prochain ✦ à <b>${fmt(hi)}</b> éclats cumulés sur toute ta vie : tu en es à ${fmt(lifeTotal())} (encore ${fmt(Math.max(0,hi-lifeTotal()))}).`;
+  renderForms();
   $('rs').disabled=g<1;$('rs').textContent=g>=1?`Renaître (+${g} ✦)`:'Pas encore possible';
   $('sw_sound').classList.toggle('on',!!S.opt.sound);$('sw_vib').classList.toggle('on',!!S.opt.vib);
   $('stats').innerHTML=[['Clics',S.clicks],['Éclats cumulés',fmt(S.maxTotal)],['Succès',`${achCount()} / ${ACH.length}`],['Renaissances',S.rebirths],['Cristaux dorés',S.golds],['Étoiles',S.stars]]
@@ -500,7 +552,8 @@ $('sw_vib').onclick=()=>{S.opt.vib=S.opt.vib?0:1;if(S.opt.vib)vib(30);save();ren
 $('rs').onclick=async()=>{const g=gain();if(g<1)return;
   if(await ask('Renaître ?',`Tu perds tes éclats et tes améliorations.<br>Tu gardes styles, décors, bonus, succès et gemmes.<br><br>Tu gagnes <b>+${g} ✦</b> (+${g*25} % de production) et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.`,'Renaître',false)){
     S.life+=S.total;S.eternity+=g;S.gems+=g*GEMS_PER_ETERNITY;S.rebirths++;S.nextMil=1e6;S.surge=0;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);
-    save();closeSet();render();toast(`✦ <b>Renaissance !</b><br>+${g} ✦ · +${g*GEMS_PER_ETERNITY} 💠`,3500)}};
+    save();closeSet();applyStyle();renderCrystal();{const gm=$('gem');gm.classList.remove('born');void gm.getBoundingClientRect();gm.classList.add('born')}
+    render();toast(`✦ <b>Renaissance !</b><br>+${g} ✦ · +${g*GEMS_PER_ETERNITY} 💠<br>Ton cristal devient un <b>${FORMS[S.rebirths%FORMS.length].nm}</b> !`,4500)}};
 $('rst').onclick=async()=>{
   if(!await ask('Effacer ta progression ?','Tout sera supprimé : éclats, gemmes, styles, succès, ✦.<br><b>Cette action est définitive.</b>','Continuer',true))return;
   if(await ask('Vraiment tout effacer ?','Dernière confirmation : ta partie sera remise à zéro.','Oui, tout effacer',true)){
@@ -595,8 +648,96 @@ $('t2').addEventListener('click',()=>seen.t2=1);$('t3').addEventListener('click'
 $('tskip').onclick=()=>{S.tuto=99;save();tutoClear()};
 $('tutoR').onclick=()=>{S.tuto=0;for(const k in seen)delete seen[k];save();closeSet();tab(1)};
 
+// ---------- Formes du cristal (une nouvelle à chaque renaissance) et événements de saison ----------
+const starPath=(n,cx,cy,R,r,rot=-90)=>{let d='';for(let i=0;i<n*2;i++){const a=(rot+i*180/n)*Math.PI/180,rr=i%2?r:R;d+=(i?'L':'M')+(cx+rr*Math.cos(a)).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1)}return d+'Z'};
+const FORMS=[ // une pierre précieuse par renaissance : taille (d), facettes (f), couleurs (c) et halo (glow)
+ {nm:'Diamant',c:['#f4fdff','#8fd3ff'],glow:'#bfeaffaa',d:'M50 2 L80 24 L98 56 L50 123 L2 56 L20 24Z',
+  f:'M20 24 H80 M2 56 H98 M20 24 L35 56 M80 24 L65 56 M35 56 L50 123 M65 56 L50 123 M50 2 L35 56 M50 2 L65 56'},
+ {nm:'Rubis',c:['#ff8aa0','#b0002b'],glow:'#ff2d55aa',d:'M50 4 C82 4 96 34 96 64 C96 96 78 121 50 121 C22 121 4 96 4 64 C4 34 18 4 50 4Z',
+  f:'M50 20 C72 20 84 40 84 64 C84 88 70 106 50 106 C30 106 16 88 16 64 C16 40 28 20 50 20Z M50 4 V20 M50 121 V106 M4 64 H16 M96 64 H84 M22 14 L30 28 M78 14 L70 28 M22 114 L30 100 M78 114 L70 100'},
+ {nm:'Émeraude',c:['#9dffc8','#009a63'],glow:'#00e08aaa',d:'M28 4 H72 L96 30 V95 L72 121 H28 L4 95 V30Z',
+  f:'M34 22 H66 L84 40 V88 L66 106 H34 L16 88 V40Z M42 42 H58 L66 52 V76 L58 86 H42 L34 76 V52Z M28 4 L34 22 M72 4 L66 22 M96 30 L84 40 M4 30 L16 40 M96 95 L84 88 M4 95 L16 88 M72 121 L66 106 M28 121 L34 106'},
+ {nm:'Saphir',c:['#8fb6ff','#1738b5'],glow:'#4a78ffaa',d:'M30 6 H70 C88 6 96 14 96 32 V94 C96 112 88 120 70 120 H30 C12 120 4 112 4 94 V32 C4 14 12 6 30 6Z',
+  f:'M32 26 H68 C80 26 84 30 84 42 V86 C84 98 80 102 68 102 H32 C20 102 16 98 16 86 V42 C16 30 20 26 32 26Z M8 12 L18 28 M92 12 L82 28 M8 114 L18 100 M92 114 L82 100 M50 26 V102 M16 64 H84'},
+ {nm:'Améthyste',c:['#dba8ff','#7a2fd0'],glow:'#b36bffaa',d:'M50 2 L88 22 V100 L50 123 L12 100 V22Z',
+  f:'M50 2 V123 M12 22 L50 56 L88 22 M12 100 L50 66 L88 100 M12 22 V100 M88 22 V100'},
+ {nm:'Topaze',c:['#ffe58a','#ff9a1a'],glow:'#ffb52eaa',d:'M50 2 C58 26 94 52 94 82 C94 106 74 122 50 122 C26 122 6 106 6 82 C6 52 42 26 50 2Z',
+  f:'M50 2 V58 M6 82 L50 58 L94 82 M50 58 L28 112 M50 58 L72 112 M50 122 V84'},
+ {nm:'Opale',c:['#ffd1f0','#7df3e6'],glow:'#ffc9f2aa',d:'M50 2 C84 26 97 50 97 62 C97 80 80 104 50 123 C20 104 3 80 3 62 C3 50 16 26 50 2Z',
+  f:'M50 2 V123 M3 62 H97 M50 2 L24 62 L50 123 M50 2 L76 62 L50 123'},
+ {nm:'Perle',c:['#ffffff','#d8cbb8'],glow:'#f6ede0aa',d:'M50 6 C82 6 98 32 98 64 C98 96 80 122 50 122 C20 122 2 96 2 64 C2 32 18 6 50 6Z',
+  f:'M20 48 C24 32 36 20 52 16',fw:5},
+];
+const HEART_D='M50 120 C8 90 0 56 20 34 C36 18 50 30 50 42 C50 30 64 18 80 34 C100 56 92 90 50 120Z';
+const EGG_D='M50 3 C80 3 97 50 97 82 C97 108 76 122 50 122 C24 122 3 108 3 82 C3 50 20 3 50 3Z';
+const SEASONS={
+ halloween:{nm:'Halloween',ico:'🎃',fx:'🦇',dates:'24 oct → 1er nov',msg:'🎃 <b>Halloween !</b><br>Le cristal a enfilé un chapeau de sorcière.',
+   acc:'<g transform="translate(50 10) rotate(-8)"><ellipse cx="0" cy="3" rx="40" ry="9" fill="#2d0f4e"/><path d="M-26 2 L-6 -6 L-12 -42 L-3 -64 L14 -38 L24 -4 Z" fill="#4a1a7a"/><rect x="-9" y="-14" width="30" height="9" rx="1" fill="#ffb300"/><rect x="2" y="-14" width="8" height="9" fill="#ffe082"/></g>'},
+ noel:{nm:'Noël',ico:'🎄',fx:'❄️',dates:'1er → 26 déc',msg:'🎄 <b>Joyeux Noël !</b><br>Le cristal porte un bonnet de Père Noël.',
+   acc:'<g transform="translate(50 12) rotate(-10)"><path d="M-28 4 C-24 -22 -12 -46 12 -54 C22 -57 28 -48 23 -39 C18 -22 22 -8 30 4 Z" fill="#e53935"/><path d="M-26 -8 C-14 -22 -4 -36 4 -50" fill="none" stroke="#c62828" stroke-width="4" opacity=".5"/><rect x="-34" y="-6" width="68" height="15" rx="7.5" fill="#fff"/><circle cx="20" cy="-50" r="9" fill="#fff"/></g>'},
+ an:{nm:'Nouvel An',ico:'🎆',fx:'✨',dates:'27 déc → 3 jan',msg:'🎆 <b>Bonne année !</b><br>Le cristal met son chapeau de fête.',
+   acc:'<g transform="translate(50 12) rotate(10)"><path d="M-22 4 L0 -56 L24 4 Z" fill="#ffd54a"/><path d="M-14 -16 L16 -6 L12 4 L-18 -6 Z" fill="#ff4081"/><path d="M-6 -38 L10 -32 L7 -24 L-9 -30 Z" fill="#7df9ff"/><circle cx="0" cy="-58" r="6.5" fill="#fff"/><path d="M-22 4 H24" stroke="#ff4081" stroke-width="4"/></g>'},
+ valentin:{nm:'Saint-Valentin',ico:'💘',fx:'💗',up:1,shape:'heart',dates:'7 → 15 fév',msg:'💘 <b>Saint-Valentin !</b><br>Le cristal se transforme en cœur.'},
+ paques:{nm:'Pâques',ico:'🐣',fx:'🌸',shape:'egg',dates:'la semaine de Pâques',msg:'🐣 <b>Joyeuses Pâques !</b><br>Le cristal se transforme en œuf.'},
+};
+const SEASON_ORDER=['halloween','noel','an','valentin','paques'];
+// Date de Pâques (calendrier grégorien, algorithme de Meeus/Jones/Butcher)
+function easterDate(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+function seasonOf(now){
+  const y=now.getFullYear(),day=86400000,t=new Date(y,now.getMonth(),now.getDate()).getTime(),D=(yy,m,d)=>new Date(yy,m,d).getTime();
+  const E=easterDate(y).getTime();
+  if(t>=E-9*day&&t<=E+1*day)return 'paques';
+  if(t>=D(y,9,24)&&t<=D(y,10,1))return 'halloween';
+  if(t>=D(y,11,1)&&t<=D(y,11,26))return 'noel';
+  if(t>=D(y,11,27)||t<=D(y,0,3))return 'an';
+  if(t>=D(y,1,7)&&t<=D(y,1,15))return 'valentin';
+  return null;
+}
+let previewSeason='auto';
+try{const q=new URLSearchParams(location.search).get('season');if(q&&SEASONS[q])previewSeason=q}catch(e){}
+const activeSeason=()=>previewSeason==='auto'?seasonOf(new Date()):previewSeason==='none'?null:previewSeason;
+let fxKey='';
+function renderFx(se,aura){
+  const key=(se||'-')+'|'+aura;if(key===fxKey)return;fxKey=key;
+  const ring=$('aura');ring.innerHTML='<i></i>'.repeat(aura);
+  const box=$('fx');box.innerHTML='';
+  if(!se||!SEASONS[se].fx||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
+  for(let i=0;i<14;i++){const e=document.createElement('span');e.className='fxp'+(SEASONS[se].up?' rise':'');e.textContent=SEASONS[se].fx;
+    e.style.cssText=`left:${rnd(0,96)}%;font-size:${rnd(14,26)}px;animation-duration:${rnd(9,17)}s;animation-delay:-${rnd(0,15)}s`;box.appendChild(e)}
+}
+function renderCrystal(){
+  const se=activeSeason(),sd=se?SEASONS[se]:null,f=FORMS[S.rebirths%FORMS.length];
+  let d=f.d,fill='url(#g)';
+  if(sd&&sd.shape==='heart'){d=HEART_D;fill='url(#gp)'}
+  if(sd&&sd.shape==='egg'){d=EGG_D;fill='url(#ge)'}
+  for(const id of ['cs','ch','cd','cpp'])$(id).setAttribute('d',d);
+  $('cf').setAttribute('d',sd&&sd.shape?'':f.f);$('cf').setAttribute('stroke-width',f.fw||1.5);
+  $('cs').setAttribute('fill',fill);
+  $('stripes').style.display=sd&&sd.shape==='egg'?'':'none';
+  $('acc').innerHTML=sd&&sd.acc?`<g transform="translate(50 6) scale(.66) translate(-50 -6)">${sd.acc}</g>`:'';
+  $('stage').classList.toggle('hatted',!!(sd&&sd.acc)); // on laisse de la place au-dessus pour le chapeau
+  renderFx(se,Math.min(3,Math.floor(S.rebirths/3)));
+}
+function renderForms(){
+  const cur=S.rebirths%FORMS.length;
+  $('faspect').innerHTML=`Pierre actuelle : <b>${FORMS[cur].nm}</b>. Ton cristal devient une nouvelle pierre précieuse à chaque renaissance${S.rebirths>=3?', et un halo l\'entoure toutes les 3 renaissances':''}. Si tu équipes un style de la boutique, il remplace la couleur naturelle.`;
+  $('forms').innerHTML=FORMS.map((f,i)=>{const got=S.rebirths>=i||S.rebirths>=FORMS.length;
+    return `<div style="text-align:center"><svg viewBox="-4 -4 108 133" class="${i===cur?'cur':''}"><defs><linearGradient id="fg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${f.c[0]}"/><stop offset="1" stop-color="${f.c[1]}"/></linearGradient></defs><title>${got?f.nm:'?'}</title><path d="${f.d}" fill="${got?`url(#fg${i})`:'#ffffff14'}" stroke="${i===cur?'#ffe27d':got?'none':'#ffffff30'}" stroke-width="${i===cur?4:3}" ${got?'':'stroke-dasharray="6 5"'}/>${got?`<path d="${f.f}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="${(f.fw||1.5)*1.6}" stroke-linecap="round" stroke-linejoin="round"/>`:''}</svg><div style="font-size:9px;opacity:.7;margin-top:2px">${got?f.nm:'?'}</div></div>`}).join('');
+  const act=seasonOf(new Date());
+  $('seasonChips').innerHTML=['auto',...SEASON_ORDER,'none'].map(k=>`<button class="chip${previewSeason===k?' on':''}" data-k="${k}">${k==='auto'?'Auto':k==='none'?'Aucun':SEASONS[k].ico+' '+SEASONS[k].nm}</button>`).join('');
+  $('seasonChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{previewSeason=b.dataset.k;renderCrystal();renderForms()});
+  const cs=activeSeason();
+  $('seasonInfo').innerHTML=(previewSeason!=='auto'?'<b>Aperçu en cours.</b> ':'')+(cs?`Événement : <b>${SEASONS[cs].ico} ${SEASONS[cs].nm}</b>.`:'Aucun événement en ce moment.')+'<br><small style="opacity:.7">'+SEASON_ORDER.map(k=>SEASONS[k].ico+' '+SEASONS[k].nm+' : '+SEASONS[k].dates).join(' · ')+'</small>';
+}
+// Annonce à la première ouverture pendant un événement
+function seasonWelcome(){
+  const se=seasonOf(new Date());if(!se)return;const key=se+'-'+new Date().getFullYear();
+  if(S.seasonSeen===key)return;S.seasonSeen=key;save();setTimeout(()=>toast(SEASONS[se].msg,5000),off>30?5200:1500);
+}
+setInterval(renderCrystal,60000); // bascule automatique à minuit
+
 // ---------- Mise à jour automatique ----------
-const VERSION='1.3.1';
+const VERSION='1.4.1';
 $('ver').textContent='Version '+VERSION+' · Éclats Éternels';
 async function applyUpdate(){
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
@@ -615,8 +756,8 @@ async function checkUpdate(){
 setTimeout(checkUpdate,3000);setInterval(checkUpdate,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 
-applyStyle();render();
-window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave,checkUpdate,VERSION};
+applyStyle();renderCrystal();seasonWelcome();render();
+window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave,checkUpdate,VERSION,renderCrystal,setSeason:k=>{previewSeason=k;renderCrystal()},FORMS,SEASONS,seasonOf,easterDate};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
