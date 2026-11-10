@@ -148,7 +148,7 @@
     <button class="btn danger" id="rst">Effacer ma progression</button>
   </div>
   <a class="lnk" href="https://anthonysegura38450-wq.github.io/Eclats-Eternels/privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>
-  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.2.1 · Éclats Éternels</div>
+  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.3 · Éclats Éternels</div>
 </div></div>
 <div id="svm" class="modal"><div class="panel">
   <div class="ph"><h2 id="svt">Sauvegarde</h2><button class="x" id="svc" aria-label="Fermer">✕</button></div>
@@ -227,7 +227,14 @@ const baseSec=()=>perSec()/mult();
 const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';
   const s=['k','M','B','T','Qa','Qi'];let i=-1;while(n>=1000&&i<s.length-1){n/=1000;i++}return n.toFixed(n<10?2:1)+s[i]};
 const ETERNITY_AT=1e7;
-const gain=()=>Math.floor(Math.sqrt(S.total/ETERNITY_AT));
+// Règle de renaissance « cumul de vie » : ✦ total = √(éclats cumulés sur TOUTES les parties / 10 M).
+// On ne gagne que la différence avec les ✦ déjà possédés : chaque ✦ demande donc plus de jeu que le précédent.
+// S.life = éclats des parties précédentes (la partie en cours est dans S.total).
+const lifeFor=e=>e*e*ETERNITY_AT; // éclats cumulés correspondant exactement à e ✦
+if(typeof S.life!=='number'||!isFinite(S.life)||S.life<0)S.life=lifeFor(S.eternity); // migration : repart du seuil des ✦ déjà acquis
+const lifeTotal=()=>S.life+S.total;
+const gain=()=>Math.max(0,Math.floor(Math.sqrt(lifeTotal()/ETERNITY_AT))-S.eternity);
+const nextEternityAt=()=>lifeFor(S.eternity+1); // éclats cumulés (vie) requis pour le prochain ✦
 const frenzyPrice=()=>Math.max(800,Math.ceil(baseSec()*200));
 let noSave=false; // verrou : empêche de réécrire la partie pendant un import / effacement
 const save=()=>{if(noSave)return;S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -458,10 +465,11 @@ if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*
 let setOpen=false;
 function renderSettings(){
   const g=gain();
-  $('rbar').style.width=Math.min(100,100*S.total/ETERNITY_AT)+'%';
+  const lo=lifeFor(S.eternity),hi=nextEternityAt();
+  $('rbar').style.width=Math.max(0,Math.min(100,100*(lifeTotal()-lo)/(hi-lo)))+'%';
   $('rinfo').innerHTML=g>=1
-    ? `Si tu renais maintenant : <b>+${g} ✦</b> et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.<br>Tu as déjà ✦ ${S.eternity} (×${(1+S.eternity*0.25).toFixed(2)}).`
-    : `Il faut cumuler <b>${fmt(ETERNITY_AT)}</b> éclats pour renaître : tu en es à ${fmt(S.total)} (${Math.floor(100*S.total/ETERNITY_AT)} %).`;
+    ? `Si tu renais maintenant : <b>+${g} ✦</b> et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.<br>Tu as déjà ✦ ${S.eternity} (×${(1+S.eternity*0.25).toFixed(2)}). Chaque ✦ demande plus d'éclats que le précédent.`
+    : `Prochain ✦ à <b>${fmt(hi)}</b> éclats cumulés sur toute ta vie : tu en es à ${fmt(lifeTotal())} (encore ${fmt(Math.max(0,hi-lifeTotal()))}).`;
   $('rs').disabled=g<1;$('rs').textContent=g>=1?`Renaître (+${g} ✦)`:'Pas encore possible';
   $('sw_sound').classList.toggle('on',!!S.opt.sound);$('sw_vib').classList.toggle('on',!!S.opt.vib);
   $('stats').innerHTML=[['Clics',S.clicks],['Éclats cumulés',fmt(S.maxTotal)],['Succès',`${achCount()} / ${ACH.length}`],['Renaissances',S.rebirths],['Cristaux dorés',S.golds],['Étoiles',S.stars]]
@@ -484,7 +492,7 @@ $('sw_vib').onclick=()=>{S.opt.vib=S.opt.vib?0:1;if(S.opt.vib)vib(30);save();ren
 
 $('rs').onclick=async()=>{const g=gain();if(g<1)return;
   if(await ask('Renaître ?',`Tu perds tes éclats et tes améliorations.<br>Tu gardes styles, décors, bonus, succès et gemmes.<br><br>Tu gagnes <b>+${g} ✦</b> (+${g*25} % de production) et <b>+${g*GEMS_PER_ETERNITY} 💠</b>.`,'Renaître',false)){
-    S.eternity+=g;S.gems+=g*GEMS_PER_ETERNITY;S.rebirths++;S.nextMil=1e6;S.surge=0;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);
+    S.life+=S.total;S.eternity+=g;S.gems+=g*GEMS_PER_ETERNITY;S.rebirths++;S.nextMil=1e6;S.surge=0;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);
     save();closeSet();render();toast(`✦ <b>Renaissance !</b><br>+${g} ✦ · +${g*GEMS_PER_ETERNITY} 💠`,3500)}};
 $('rst').onclick=async()=>{
   if(!await ask('Effacer ta progression ?','Tout sera supprimé : éclats, gemmes, styles, succès, ✦.<br><b>Cette action est définitive.</b>','Continuer',true))return;
@@ -515,6 +523,7 @@ function sanitizeSave(o){
   if(o.daily&&typeof o.daily.d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.daily.d)){R.daily={d:o.daily.d,n:Math.max(0,Math.min(7,Math.floor(n(o.daily.n)||0)))}}
   if(o.opt&&typeof o.opt==='object'){R.opt.sound=(o.opt.sound===0||o.opt.sound===false)?0:1;R.opt.vib=(o.opt.vib===0||o.opt.vib===false)?0:1}
   R.maxTotal=Math.max(R.maxTotal,R.total);
+  {const v=n(o.life);R.life=v!==null?v:lifeFor(R.eternity)} // ancienne sauvegarde sans cumul : migration
   return R;
 }
 function parseSave(text){

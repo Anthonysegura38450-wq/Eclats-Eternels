@@ -27,3 +27,6 @@ _Version courante : 1.1_
 ## Sauvegarde et tutoriel
 - ⚙️ → Sauvegarde : exporte un code (avec contrôle d'intégrité) et réimporte-le sur un autre appareil. Le code importé est validé et nettoyé ; une copie de secours de la partie remplacée est conservée.
 - Un tutoriel guidé accompagne les nouveaux joueurs (ignorable, rejouable depuis les paramètres).
+
+## Renaissance (règle « cumul de vie »)
+✦ total = √(éclats cumulés sur toute la vie / 10 M). On ne gagne que la différence avec les ✦ déjà possédés : chaque ✦ demande plus de jeu que le précédent. Détails et simulation : `docs/EQUILIBRAGE.md`.

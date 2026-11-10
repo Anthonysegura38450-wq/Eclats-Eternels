@@ -39,16 +39,16 @@ Première renaissance possible (10 M cumulés) après **54.7 min** de jeu actif.
 
 ## 4. Durée des cycles selon le profil et la politique de renaissance
 
-Politique « renaître dès que le gain ≥ N ✦ » (N = 1, 3, 10). Durée de chacun des 6 premiers cycles :
+Règle actuelle (cumul de vie). Politique « renaître dès que le gain ≥ N ✦ » (N = 1, 3, 10). Durée de chacun des 6 premiers cycles :
 
 | Profil | N | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 | Cycle 5 | Cycle 6 | ✦ après 7 jours |
 |---|---|---|---|---|---|---|---|---|
-| Actif (joue en continu, 3 clics/s) | 1 | 54.7 min | 47.6 min | 36.1 min | 31.0 min | 27.2 min | 24.2 min | 113877 |
-| Actif (joue en continu, 3 clics/s) | 3 | 2.1 h | 43.6 min | 43.2 min | 22.9 min | 16.3 min | 13.8 min | 673615 |
-| Actif (joue en continu, 3 clics/s) | 10 | 8.9 h | 69.6 min | 48.9 min | 21.6 min | 21.5 min | 8.9 min | 5723527 |
-| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 1 | 32.1 h | 23.9 h | 24.0 h | 5.1 h | 18.9 h | 12.0 h | 13 |
-| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 3 | 44.0 h | 17.0 h | 24.0 h | 7.1 h | 12.0 h | 11.9 h | 46 |
-| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 10 | 3.8 j | 24.0 h | 17.0 h | 7.1 h | 12.0 h | 11.9 h | 79 |
+| Actif (joue en continu, 3 clics/s) | 1 | 54.7 min | 72.6 min | 55.1 min | 42.5 min | 32.9 min | 59.8 min | 2790 |
+| Actif (joue en continu, 3 clics/s) | 3 | 2.1 h | 63.0 min | 1.5 h | 76.3 min | 47.7 min | 72.5 min | 969 |
+| Actif (joue en continu, 3 clics/s) | 10 | 8.9 h | 4.9 h | 3.9 h | 3.4 h | 3.8 h | 3.6 h | 670 |
+| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 1 | 32.1 h | 23.9 h | 24.0 h | 12.0 h | 17.0 h | 24.0 h | 8 |
+| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 3 | 44.0 h | 24.0 h | 36.0 h | 24.0 h | 24.0 h | 12.0 h | 23 |
+| Régulier (3 sessions de 8 min par jour, 2 clics/s) | 10 | 3.8 j | 2.0 j | — | — | — | — | 20 |
 | Occasionnel (1 session de 5 min par jour, 2 clics/s) | 1 | 4.8 j | — | — | — | — | — | 1 |
 | Occasionnel (1 session de 5 min par jour, 2 clics/s) | 3 | 6.8 j | — | — | — | — | — | 4 |
 | Occasionnel (1 session de 5 min par jour, 2 clics/s) | 10 | — | — | — | — | — | — | 0 |
@@ -69,16 +69,16 @@ Les 5 plus longues attentes :
 
 Doigt de lumière 33 · Étincelle 14 · Mineur de cristal 11 · Golem de quartz 8 · Dragon prismatique 5 · Étoile éternelle 3
 
-## 7. Piste testée : gain de ✦ basé sur le cumul de toutes les parties
+## 7. Règle de renaissance : ancienne règle vs règle actuelle
 
-Aujourd'hui : gain = √(éclats de la partie / 10 M). Variante : ✦ total = √(éclats cumulés sur toute la vie / 10 M) et on ne gagne que la différence. Chaque ✦ supplémentaire demande alors de plus en plus de jeu.
+Ancienne règle : gain = √(éclats de la partie / 10 M) — les cycles raccourcissaient sans limite. Règle actuelle : ✦ total = √(éclats cumulés sur toute la vie / 10 M), on ne gagne que la différence ; chaque ✦ demande plus de jeu que le précédent.
 
 Joueur **actif**, politique « renaître dès que gain ≥ 1 ». Durée de chaque cycle :
 
 | Règle | C1 | C2 | C3 | C4 | C5 | C6 | C8 | C10 | ✦ à 1 jour | ✦ à 3 jours | ✦ à 7 jours |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| **actuelle** | 54.7 min | 47.6 min | 36.1 min | 31.0 min | 27.2 min | 24.2 min | 19.9 min | 16.8 min | 989 | 24 086 | 113 877 |
-| cumul de vie | 54.7 min | 72.6 min | 55.1 min | 42.5 min | 32.9 min | 59.8 min | 46.3 min | 33.1 min | 69 | 762 | 2 790 |
+| ancienne | 54.7 min | 47.6 min | 36.1 min | 31.0 min | 27.2 min | 24.2 min | 19.9 min | 16.8 min | 989 | 24 086 | 113 877 |
+| **actuelle (cumul de vie)** | 54.7 min | 72.6 min | 55.1 min | 42.5 min | 32.9 min | 59.8 min | 46.3 min | 33.1 min | 69 | 762 | 2 790 |
 
 ## Conclusions
 
@@ -87,10 +87,16 @@ Joueur **actif**, politique « renaître dès que gain ≥ 1 ». Durée de chaqu
 - **Le Doigt de lumière est corrigé** : le niveau 36 coûte ~11 k au lieu de ~7 M ; un joueur actif atteint le niveau ~33 avant sa première renaissance.
 - **Cadence selon le profil** : première renaissance après ~55 min (actif), ~1,3 jour (3 sessions de 8 min par jour), ~5 jours (5 min par jour). Pour ce dernier profil, la récompense quotidienne, les cristaux dorés et les succès, non modélisés ici, accélèrent un peu.
 
-**Le point à surveiller : la boule de neige du prestige**
-Avec la règle actuelle (gain = √(éclats de la partie / 10 M), +25 % par ✦), un joueur qui renaît dès que possible voit ses cycles raccourcir sans limite : 55 min → 24 min au 6ᵉ cycle → 17 min au 10ᵉ, et le nombre de ✦ explose (~114 000 après 7 jours de jeu non-stop). À terme, la difficulté disparaît pour les joueurs très actifs.
+**Règle de renaissance « cumul de vie » (appliquée)**
+Avant, gain = √(éclats de la partie / 10 M) : un joueur qui renaît dès que possible voyait ses cycles raccourcir sans limite (55 min → 17 min au 10ᵉ cycle) et ses ✦ exploser (~114 000 après 7 jours de jeu non-stop).
 
-**Piste testée (section 7)** : ✦ total = √(éclats cumulés sur toute la vie / 10 M), et on ne gagne que la différence. Les cycles restent alors à ~30–70 min au lieu de raccourcir, et les ✦ après 7 jours passent de ~114 000 à ~2 800. Elle n'est **pas appliquée** : elle change la règle de renaissance et demande une migration des sauvegardes existantes (initialiser le cumul de vie à partir des ✦ déjà gagnés).
+Maintenant, ✦ total = √(éclats cumulés sur toute la vie / 10 M) et on ne gagne que la différence. Résultat (joueur actif, renaissance dès que possible) : ~2 800 ✦ après 7 jours au lieu de ~114 000, soit ~40 fois moins. Les cycles se stabilisent entre ~30 et ~75 min au lieu de s'effondrer.
+
+Nuances honnêtes :
+- Les cycles **raccourcissent encore doucement** (73 min au 2ᵉ cycle → 33 min au 10ᵉ) : la règle freine la boule de neige, elle ne la supprime pas. Si besoin, on peut durcir davantage (par exemple un exposant plus élevé que √).
+- **Renaître souvent reste la stratégie la plus rentable** (2 790 ✦ en 7 jours en renaissant dès +1 ✦, contre 670 ✦ en attendant +10).
+
+**Migration des parties existantes** : un joueur qui avait déjà des ✦ repart du seuil correspondant (cumul de vie = ✦² × 10 M). Il garde tous ses ✦, mais doit à nouveau cumuler de quoi gagner le suivant ; un joueur à 0 ✦ n'est pas affecté.
 
 ## Limites de la simulation
 - Joueurs simulés avec une stratégie d'achat « avisée » (meilleur rapport gain/coût, on économise pour l'achat visé) ; un joueur réel est moins optimal.
