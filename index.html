@@ -100,21 +100,15 @@ const THEMES=[
  {id:'aby', nm:'Abysses',b:['#0b3a8a','#020617'],price:1500000},
  {id:'cos', nm:'Nébuleuse',b:['#7a1f6b','#0a0320'],price:10000000},
 ];
-// ---- Paiements (Stripe Payment Links) ----
-// LIVE=false : liens de TEST (aucun vrai paiement). Pour la vente réelle, remplacer les url par les liens "live" et passer LIVE à true.
-const LIVE=false;
-const PACKS=[
- {id:'s',gems:100, label:'0,99 €',url:'https://buy.stripe.com/test_eVq28s3sMgJgbfPdew8Vi00'},
- {id:'m',gems:600, label:'4,99 €',url:'https://buy.stripe.com/test_dRmeVed3makS3NneiA8Vi01',tag:'Populaire'},
- {id:'l',gems:1400,label:'9,99 €',url:'https://buy.stripe.com/test_28E3cw2oIakS97HfmE8Vi02',tag:'Meilleure offre'},
-];
+// ---- Gemmes : 100 % gratuites, gagnées en jouant (succès et renaissances) ----
+const GEMS_PER_ACH=10,GEMS_PER_ETERNITY=10;
 const PRISMS=[
- {id:'p1',nm:'Prisme I',price:100},{id:'p2',nm:'Prisme II',price:250},{id:'p3',nm:'Prisme III',price:500},
- {id:'p4',nm:'Prisme IV',price:1000},{id:'p5',nm:'Prisme V',price:2000},
+ {id:'p1',nm:'Prisme I',price:20},{id:'p2',nm:'Prisme II',price:50},{id:'p3',nm:'Prisme III',price:100},
+ {id:'p4',nm:'Prisme IV',price:200},{id:'p5',nm:'Prisme V',price:400},
 ];
 const HEARTS=[{id:'h1',nm:'Cœur de cristal I',price:60000},{id:'h2',nm:'Cœur de cristal II',price:600000},{id:'h3',nm:'Cœur de cristal III',price:6000000}];
 const KEY='ee_clicker';
-let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,paid:{},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
 S.own=Object.assign({ame:1,nuit:1},S.own);S.ach=S.ach||{};
 UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
@@ -176,9 +170,9 @@ function addItem(it){
   const b=document.createElement('button');b.className='up';
   b.innerHTML=`<span class="ico">${it.ico}</span><span><div class="nm">${it.nm}</div><div class="ds">${it.ds}</div></span><span class="pr"></span>`;
   b.onclick=()=>it.click();it.el=b;items.push(it);shop2.appendChild(b)}
-sec('💠 Gemmes'+(LIVE?'':' — mode test (aucun vrai paiement)'));
-PACKS.forEach(k=>addItem({ico:'💠',nm:k.gems.toLocaleString('fr-FR')+' gemmes',ds:(k.tag?k.tag+' · ':'')+'Paiement sécurisé par Stripe',label:k.label,free:1,
-  price:()=>0,state:()=>'buy',click(){location.href=k.url}}));
+sec('💠 Gemmes — gratuites');
+{const d=document.createElement('div');d.className='ds';d.style.cssText='margin:0 2px 10px;opacity:.8';
+ d.textContent=`Gagne des gemmes en débloquant des succès (+${GEMS_PER_ACH} chacun) et en renaissant (+${GEMS_PER_ETERNITY} par ✦).`;shop2.appendChild(d)}
 sec('Bonus à gemmes (permanents)');
 PRISMS.forEach((x,i)=>addItem({ico:'🔷',nm:x.nm,ds:'+10 % de production et de clic',cur:'gem',price:()=>x.price,
   state:()=>S.own[x.id]?'done':(i>0&&!S.own[PRISMS[i-1].id]?'lock':'buy'),
@@ -236,11 +230,11 @@ function checkAch(){
   S.maxTotal=Math.max(S.maxTotal,S.total);
   const got=[];
   for(const a of ACH){if(!S.ach[a.id]&&a.v()>=a.t){S.ach[a.id]=1;got.push(a)}}
-  if(got.length){vib([60,40,60]);tick(880);
-    toast(got.map(a=>`🏆 <b>${a.nm}</b>`).join('<br>')+'<br><small>+2 % de production par succès</small>',3500);save()}
+  if(got.length){S.gems+=GEMS_PER_ACH*got.length;vib([60,40,60]);tick(880);
+    toast(got.map(a=>`🏆 <b>${a.nm}</b>`).join('<br>')+`<br><small>+2 % de production · +${GEMS_PER_ACH*got.length} 💠</small>`,3500);save()}
 }
 function renderAch(){
-  achHead.textContent=`${achCount()} / ${ACH.length} débloqués · bonus +${achCount()*2} %`;
+  achHead.textContent=`${achCount()} / ${ACH.length} débloqués · bonus +${achCount()*2} % · +${GEMS_PER_ACH} 💠 par succès`;
   for(const a of ACH){const done=!!S.ach[a.id],v=Math.min(a.v(),a.t);
     a.el.classList.toggle('done',done);
     a.el.querySelector('.bar').style.display=done?'none':'block';
@@ -294,18 +288,12 @@ if(off>30&&baseSec()>0){const v=baseSec()*(1+S.eternity*0.25)*(1+hearts()*0.25)*
   toast(`Bon retour !<br>Tes cristaux ont produit <b>${fmt(v)}</b> éclats pendant ton absence.`,4500)}
 
 $('rs').onclick=()=>{const g=gain();if(g<1)return alert('Il faut avoir cumulé 10M d\'éclats pour renaître.');
-  if(confirm(`Renaître ? Tu perds éclats et améliorations (tes styles et bonus de boutique restent), mais gagnes +${g} ✦ (chaque ✦ = +25 % de production).`)){
-    S.eternity+=g;S.rebirths++;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);save();render()}};
+  if(confirm(`Renaître ? Tu perds éclats et améliorations (tes styles et bonus de boutique restent), mais gagnes +${g} ✦ (chaque ✦ = +25 % de production) et +${g*GEMS_PER_ETERNITY} 💠.`)){
+    S.eternity+=g;S.gems+=g*GEMS_PER_ETERNITY;S.rebirths++;S.score=0;S.total=0;UPS.forEach(u=>S.lv[u.id]=0);save();render()}};
 $('rst').onclick=()=>{if(confirm('Tout effacer, y compris ta progression ?')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
 document.addEventListener('visibilitychange',()=>{save();if(!document.hidden){lt=performance.now()}});
 addEventListener('pagehide',save);
 document.addEventListener('dblclick',e=>e.preventDefault());
-
-// Retour de Stripe : ?pack=m&sid=cs_...
-try{const q=new URLSearchParams(location.search),pk=PACKS.find(x=>x.id===q.get('pack')),sid=q.get('sid')||'';
-  const okSid=new RegExp('^cs_'+(LIVE?'live':'test')+'_[A-Za-z0-9]{10,}$').test(sid);
-  if(pk&&okSid&&!S.paid[sid]){S.paid[sid]=1;S.gems+=pk.gems;save();setTimeout(()=>toast(`💠 Merci ! <b>+${pk.gems} gemmes</b> ajoutées.`,5000),300)}
-  if(q.has('pack'))history.replaceState(null,'',location.pathname)}catch(e){}
 
 applyStyle();render();
 window.__ee={S,checkAch};
