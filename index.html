@@ -176,7 +176,7 @@
     <p id="faspect"></p>
     <div class="forms" id="forms"></div>
     <h3 style="margin-top:14px">🎉 Événements de saison</h3>
-    <p>Le cristal se déguise à certaines dates. Aperçu temporaire (il disparaît quand tu fermes le jeu) :</p>
+    <p>Le cristal se déguise automatiquement à certaines dates de l'année.</p>
     <div class="chips" id="seasonChips"></div>
     <p id="seasonInfo" style="margin-top:8px"></p>
   </div>
@@ -217,6 +217,8 @@
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
+// Mode développeur : actif UNIQUEMENT quand le jeu tourne en local (http://localhost…). Jamais sur le site publié ni dans l'application.
+const DEV=/^https?:$/.test(location.protocol)&&/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
 const UPS=[
  {id:'tap',ico:'👆',nm:'Doigt de lumière',   ds:'+1 éclat par clic',base:40,    g:1.17,click:1},
  {id:'spr',ico:'✨',nm:'Étincelle',          ds:'+1 éclat / s',     base:120,   g:1.25,ps:1},
@@ -694,7 +696,7 @@ function seasonOf(now){
   return null;
 }
 let previewSeason='auto';
-try{const q=new URLSearchParams(location.search).get('season');if(q&&SEASONS[q])previewSeason=q}catch(e){}
+if(DEV)try{const q=new URLSearchParams(location.search).get('season');if(q&&SEASONS[q])previewSeason=q}catch(e){}
 const activeSeason=()=>previewSeason==='auto'?seasonOf(new Date()):previewSeason==='none'?null:previewSeason;
 let fxKey='';
 function renderFx(se,aura){
@@ -724,10 +726,12 @@ function renderForms(){
   $('forms').innerHTML=FORMS.map((f,i)=>{const got=S.rebirths>=i||S.rebirths>=FORMS.length;
     return `<div style="text-align:center"><svg viewBox="-4 -4 108 133" class="${i===cur?'cur':''}"><defs><linearGradient id="fg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${f.c[0]}"/><stop offset="1" stop-color="${f.c[1]}"/></linearGradient></defs><title>${got?f.nm:'?'}</title><path d="${f.d}" fill="${got?`url(#fg${i})`:'#ffffff14'}" stroke="${i===cur?'#ffe27d':got?'none':'#ffffff30'}" stroke-width="${i===cur?4:3}" ${got?'':'stroke-dasharray="6 5"'}/>${got?`<path d="${f.f}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="${(f.fw||1.5)*1.6}" stroke-linecap="round" stroke-linejoin="round"/>`:''}</svg><div style="font-size:9px;opacity:.7;margin-top:2px">${got?f.nm:'?'}</div></div>`}).join('');
   const act=seasonOf(new Date());
-  $('seasonChips').innerHTML=['auto',...SEASON_ORDER,'none'].map(k=>`<button class="chip${previewSeason===k?' on':''}" data-k="${k}">${k==='auto'?'Auto':k==='none'?'Aucun':SEASONS[k].ico+' '+SEASONS[k].nm}</button>`).join('');
-  $('seasonChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{previewSeason=b.dataset.k;renderCrystal();renderForms()});
+  if(DEV){ // aperçu réservé au développement local
+    $('seasonChips').innerHTML=['auto',...SEASON_ORDER,'none'].map(k=>`<button class="chip${previewSeason===k?' on':''}" data-k="${k}">${k==='auto'?'Auto':k==='none'?'Aucun':SEASONS[k].ico+' '+SEASONS[k].nm}</button>`).join('');
+    $('seasonChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{previewSeason=b.dataset.k;renderCrystal();renderForms()});
+  }else $('seasonChips').style.display='none';
   const cs=activeSeason();
-  $('seasonInfo').innerHTML=(previewSeason!=='auto'?'<b>Aperçu en cours.</b> ':'')+(cs?`Événement : <b>${SEASONS[cs].ico} ${SEASONS[cs].nm}</b>.`:'Aucun événement en ce moment.')+'<br><small style="opacity:.7">'+SEASON_ORDER.map(k=>SEASONS[k].ico+' '+SEASONS[k].nm+' : '+SEASONS[k].dates).join(' · ')+'</small>';
+  $('seasonInfo').innerHTML=(DEV&&previewSeason!=='auto'?'<b>Aperçu en cours.</b> ':'')+(cs?`Événement : <b>${SEASONS[cs].ico} ${SEASONS[cs].nm}</b>.`:'Aucun événement en ce moment.')+'<br><small style="opacity:.7">'+SEASON_ORDER.map(k=>SEASONS[k].ico+' '+SEASONS[k].nm+' : '+SEASONS[k].dates).join(' · ')+'</small>';
 }
 // Annonce à la première ouverture pendant un événement
 function seasonWelcome(){
@@ -737,7 +741,7 @@ function seasonWelcome(){
 setInterval(renderCrystal,60000); // bascule automatique à minuit
 
 // ---------- Mise à jour automatique ----------
-const VERSION='1.4.1';
+const VERSION='1.4.2';
 $('ver').textContent='Version '+VERSION+' · Éclats Éternels';
 async function applyUpdate(){
   try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
@@ -757,7 +761,7 @@ setTimeout(checkUpdate,3000);setInterval(checkUpdate,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
 
 applyStyle();renderCrystal();seasonWelcome();render();
-window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave,checkUpdate,VERSION,renderCrystal,setSeason:k=>{previewSeason=k;renderCrystal()},FORMS,SEASONS,seasonOf,easterDate};
+if(DEV)window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave,checkUpdate,VERSION,renderCrystal,setSeason:k=>{previewSeason=k;renderCrystal()},FORMS,SEASONS,seasonOf,easterDate};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>

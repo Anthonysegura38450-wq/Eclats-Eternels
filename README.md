@@ -37,4 +37,5 @@ Le jeu vérifie `version.json` (sans cache) et affiche un bandeau « Nouvelle ve
 ## Pierres précieuses et événements de saison
 - **Une pierre par renaissance** : Diamant, Rubis, Émeraude, Saphir, Améthyste, Topaze, Opale, Perle (puis le cycle recommence). Chacune a sa taille, ses facettes et sa couleur naturelle ; un style équipé depuis la Boutique remplace la couleur. Un halo entoure le cristal toutes les 3 renaissances.
 - **Événements de saison** (automatiques, selon la date) : 🎃 Halloween (24 oct → 1er nov, chapeau de sorcière), 🎄 Noël (1er → 26 déc, bonnet de Père Noël + neige), 🎆 Nouvel An (27 déc → 3 jan, chapeau de fête), 💘 Saint-Valentin (7 → 15 fév, cœur), 🐣 Pâques (semaine de Pâques, œuf décoré).
-- Aperçu : ⚙️ → « Aspect du cristal » → « Événements de saison », ou `?season=noel` dans l'adresse.
+- **Les joueurs ne peuvent pas modifier les événements** : ils suivent uniquement la date de l'appareil. L'aperçu (boutons dans ⚙️ → « Aspect du cristal », adresse `?season=noel`, objet de débogage `window.__ee`) n'existe **qu'en local** (`http://localhost…`), jamais sur le site publié ni dans l'application iOS.
+  Pour prévisualiser : `python3 -m http.server` puis `http://localhost:8000/?season=noel` (valeurs : halloween, noel, an, valentin, paques).
