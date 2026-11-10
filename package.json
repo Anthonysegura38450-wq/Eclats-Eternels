@@ -4,8 +4,9 @@
   "private": true,
   "description": "Éclats Éternels — jeu clicker mobile",
   "scripts": {
-    "build:web": "rm -rf www && mkdir www && cp index.html catcher.html manifest.json icon.svg www/",
-    "sync": "npm run build:web && npx cap sync"
+    "build:web": "rm -rf www && mkdir www && cp index.html catcher.html manifest.json icon.svg version.json www/",
+    "sync": "npm run build:web && npx cap sync",
+    "test": "node tools/check-version.js"
   },
   "dependencies": {
     "@capacitor/cli": "^8.6.0",

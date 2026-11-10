@@ -30,3 +30,6 @@ _Version courante : 1.1_
 
 ## Renaissance (règle « cumul de vie »)
 ✦ total = √(éclats cumulés sur toute la vie / 10 M). On ne gagne que la différence avec les ✦ déjà possédés : chaque ✦ demande plus de jeu que le précédent. Détails et simulation : `docs/EQUILIBRAGE.md`.
+
+## Mises à jour
+Le jeu vérifie `version.json` (sans cache) et affiche un bandeau « Nouvelle version disponible » quand une version plus récente est publiée. À chaque version : modifier `VERSION` dans `index.html` **et** `version.json` (contrôle : `npm test`).
