@@ -78,6 +78,14 @@
   .lnk{display:block;text-align:center;margin-top:12px;font-size:13px;color:#c77dff}
   .dlg h2{margin:0 0 8px;font-size:19px}.dlg p{margin:0;opacity:.85;line-height:1.45;font-size:15px}
   .dlg .two{display:flex;gap:10px;margin-top:6px}.dlg .two .btn{margin-top:12px}
+  .ta{width:100%;height:110px;margin-top:8px;border-radius:12px;border:1px solid #ffffff2a;background:#0b0820;color:#cfe;font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:none;word-break:break-all;-webkit-user-select:text;user-select:text}
+  .two{display:flex;gap:10px}.two .btn{margin-top:10px}
+  #tuto{position:fixed;z-index:25;max-width:280px;pointer-events:none;display:none;background:#ffe27d;color:#2a1050;border-radius:14px;padding:10px 12px;font-weight:700;font-size:14px;line-height:1.35;box-shadow:0 6px 24px #000a}
+  #tuto button{pointer-events:auto;display:block;margin:6px 0 0;background:none;border:0;color:#2a1050b0;font:inherit;font-size:12px;font-weight:600;text-decoration:underline;padding:0}
+  .hl{animation:hl 1s ease-in-out infinite alternate}
+  @keyframes hl{from{box-shadow:0 0 0 2px #ffe27d,0 0 8px #ffe27d88}to{box-shadow:0 0 0 3px #ffe27d,0 0 26px #ffe27d}}
+  .hlg{animation:hlg 1s ease-in-out infinite alternate}
+  @keyframes hlg{from{filter:drop-shadow(0 0 10px #ffe27d)}to{filter:drop-shadow(0 0 38px #ffe27d)}}
   #ev{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
   .gold,.star{position:absolute;pointer-events:auto;cursor:pointer}
   .gold{width:64px;height:80px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
@@ -129,13 +137,27 @@
     <div class="stats" id="stats"></div>
   </div>
 
+  <div class="card"><h3>💾 Sauvegarde</h3>
+    <p>Ta partie est enregistrée sur cet appareil. Copie ton code de sauvegarde pour le conserver ailleurs ou changer de téléphone.</p>
+    <div class="two"><button class="btn ghost" id="svx">📋 Exporter</button><button class="btn ghost" id="svi">📥 Importer</button></div>
+    <button class="btn ghost" id="tutoR">🎓 Revoir le tutoriel</button>
+  </div>
+
   <div class="card"><h3>Zone de danger</h3>
     <p>Efface définitivement toute ta progression : éclats, gemmes, styles, succès, ✦. Impossible à annuler.</p>
     <button class="btn danger" id="rst">Effacer ma progression</button>
   </div>
   <a class="lnk" href="https://anthonysegura38450-wq.github.io/Eclats-Eternels/privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>
-  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.1 · Éclats Éternels</div>
+  <div class="lnk" style="color:#ffffff66;margin-top:6px">Version 1.2 · Éclats Éternels</div>
 </div></div>
+<div id="svm" class="modal"><div class="panel">
+  <div class="ph"><h2 id="svt">Sauvegarde</h2><button class="x" id="svc" aria-label="Fermer">✕</button></div>
+  <p id="svp" style="margin:4px 0 0;opacity:.8;font-size:14px;line-height:1.4"></p>
+  <textarea class="ta" id="sva" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+  <p id="sve" style="margin:6px 0 0;color:#ff7d93;font-size:13px;min-height:16px"></p>
+  <button class="btn" id="svok">OK</button>
+</div></div>
+<div id="tuto"><span id="tt"></span><button id="tskip">Passer le tutoriel</button></div>
 <div id="dlg" class="modal"><div class="panel dlg">
   <h2 id="dt"></h2><p id="dp"></p>
   <div class="two"><button class="btn ghost" id="dno">Annuler</button><button class="btn" id="dok">OK</button></div>
@@ -180,9 +202,10 @@ const PRISMS=[
 ];
 const HEARTS=[{id:'h1',nm:'Cœur de cristal I',price:60000},{id:'h2',nm:'Cœur de cristal II',price:600000},{id:'h3',nm:'Cœur de cristal III',price:6000000}];
 const KEY='ee_clicker';
-let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,surge:0,nextMil:1e6,golds:0,stars:0,daily:{d:'',n:0},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{}};
+let S={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,surge:0,nextMil:1e6,golds:0,stars:0,daily:{d:'',n:0},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{},tuto:-1};
 try{const r=JSON.parse(localStorage.getItem(KEY));if(r)S=Object.assign(S,r)}catch(e){}
-S.own=Object.assign({ame:1,nuit:1},S.own);S.opt=Object.assign({sound:1,vib:1},S.opt||{});S.ach=S.ach||{};
+S.own=Object.assign({ame:1,nuit:1},S.own);S.opt=Object.assign({sound:1,vib:1},S.opt||{});
+if(S.tuto===-1)S.tuto=(S.total<500&&S.clicks<30)?0:99; // les joueurs existants n'ont pas besoin du tutorielS.ach=S.ach||{};
 UPS.forEach(u=>S.lv[u.id]=S.lv[u.id]||0);
 
 const frenzyOn=()=>Date.now()<S.frenzy;
@@ -206,7 +229,8 @@ const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n)+'';
 const ETERNITY_AT=1e7;
 const gain=()=>Math.floor(Math.sqrt(S.total/ETERNITY_AT));
 const frenzyPrice=()=>Math.max(800,Math.ceil(baseSec()*200));
-const save=()=>{S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let noSave=false; // verrou : empêche de réécrire la partie pendant un import / effacement
+const save=()=>{if(noSave)return;S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 // Retour haptique : natif dans l'app iOS (Capacitor), vibration web sinon
 const vib=ms=>{
   if(!S.opt.vib)return;
@@ -418,7 +442,7 @@ $('gem').addEventListener('pointerdown',e=>{
 // ---------- Boucle ----------
 let lt=performance.now(),acc=0;
 setInterval(()=>{const n=performance.now(),dt=Math.min((n-lt)/1000,1);lt=n;const v=perSec()*dt;S.score+=v;S.total+=v;
-  acc+=dt;if(acc>1){acc=0;save()}checkAch();eventsTick();render()},100);
+  acc+=dt;if(acc>1){acc=0;save()}checkAch();eventsTick();tutoTick();render()},100);
 
 // Gains hors-ligne (30 %, 4 h max)
 const off=Math.min((Date.now()-S.last)/1000,4*3600);
@@ -461,13 +485,98 @@ $('rs').onclick=async()=>{const g=gain();if(g<1)return;
 $('rst').onclick=async()=>{
   if(!await ask('Effacer ta progression ?','Tout sera supprimé : éclats, gemmes, styles, succès, ✦.<br><b>Cette action est définitive.</b>','Continuer',true))return;
   if(await ask('Vraiment tout effacer ?','Dernière confirmation : ta partie sera remise à zéro.','Oui, tout effacer',true)){
-    try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
+    noSave=true;try{localStorage.removeItem(KEY)}catch(e){}location.reload()}};
 document.addEventListener('visibilitychange',()=>{save();if(!document.hidden){lt=performance.now()}});
 addEventListener('pagehide',save);
 document.addEventListener('dblclick',e=>e.preventDefault());
 
+// ---------- Sauvegarde : export / import ----------
+const SAVE_PREFIX='EE1:';
+const hash32=str=>{let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')};
+function exportSave(){S.last=Date.now();const b=btoa(unescape(encodeURIComponent(JSON.stringify(S))));return SAVE_PREFIX+b+'.'+hash32(b)}
+// Valide et nettoie une sauvegarde importée : seules les clés connues, aux types et plages attendus, sont conservées.
+function sanitizeSave(o){
+  if(!o||typeof o!=='object'||Array.isArray(o))throw new Error('format');
+  const n=(v,min=0,max=1e300)=>typeof v==='number'&&isFinite(v)&&v>=min&&v<=max?v:null;
+  const R={score:0,total:0,lv:{},eternity:0,last:Date.now(),own:{ame:1,nuit:1},skin:'ame',theme:'nuit',frenzy:0,gems:0,surge:0,nextMil:1e6,golds:0,stars:0,daily:{d:'',n:0},clicks:0,maxTotal:0,frenzies:0,rebirths:0,ach:{},opt:{sound:1,vib:1},tuto:99};
+  for(const k of ['score','total','eternity','gems','golds','stars','clicks','maxTotal','frenzies','rebirths','frenzy','surge']){const v=n(o[k]);if(v!==null)R[k]=v}
+  {const v=n(o.nextMil,1e6);if(v!==null)R.nextMil=v}
+  {const v=n(o.last,0,Date.now()+864e5);if(v!==null)R.last=v}
+  for(const u of UPS){const v=n(o.lv&&o.lv[u.id],0,1e5);R.lv[u.id]=v===null?0:Math.floor(v)}
+  const known=new Set([...SKINS,...THEMES,...HEARTS,...PRISMS].map(x=>x.id));
+  if(o.own&&typeof o.own==='object')for(const id of Object.keys(o.own))if(known.has(id)&&o.own[id])R.own[id]=1;
+  if(typeof o.skin==='string'&&R.own[o.skin]&&SKINS.some(x=>x.id===o.skin))R.skin=o.skin;
+  if(typeof o.theme==='string'&&R.own[o.theme]&&THEMES.some(x=>x.id===o.theme))R.theme=o.theme;
+  if(o.ach&&typeof o.ach==='object')for(const id of Object.keys(o.ach)){const m=/^a(\d+)$/.exec(id);if(m&&+m[1]<ACH.length&&o.ach[id])R.ach[id]=1}
+  if(o.daily&&typeof o.daily.d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.daily.d)){R.daily={d:o.daily.d,n:Math.max(0,Math.min(7,Math.floor(n(o.daily.n)||0)))}}
+  if(o.opt&&typeof o.opt==='object'){R.opt.sound=(o.opt.sound===0||o.opt.sound===false)?0:1;R.opt.vib=(o.opt.vib===0||o.opt.vib===false)?0:1}
+  R.maxTotal=Math.max(R.maxTotal,R.total);
+  return R;
+}
+function parseSave(text){
+  const t=String(text||'').replace(/\s+/g,'');
+  if(!t.startsWith(SAVE_PREFIX))throw new Error('Ce code n\'est pas une sauvegarde Éclats Éternels.');
+  const body=t.slice(SAVE_PREFIX.length),i=body.lastIndexOf('.');
+  if(i<1||hash32(body.slice(0,i))!==body.slice(i+1))throw new Error('Code incomplet ou abîmé : copie-le en entier.');
+  let o;try{o=JSON.parse(decodeURIComponent(escape(atob(body.slice(0,i)))))}catch(e){throw new Error('Code illisible.')}
+  return sanitizeSave(o);
+}
+let svMode='';
+function openSave(mode){
+  svMode=mode;const ta=$('sva');$('sve').textContent='';
+  if(mode==='export'){$('svt').textContent='📋 Exporter';$('svp').textContent='Copie ce code et garde-le (note, e-mail à toi-même…). Il permet de retrouver ta partie.';
+    ta.value=exportSave();ta.readOnly=true;$('svok').textContent='Copier le code'}
+  else{$('svt').textContent='📥 Importer';$('svp').textContent='Colle ici le code de sauvegarde. Ta partie actuelle sera remplacée (une copie de secours est gardée).';
+    ta.value='';ta.readOnly=false;$('svok').textContent='Importer'}
+  $('svm').classList.add('open');if(mode==='export'){ta.focus();ta.select()}
+}
+const closeSave=()=>$('svm').classList.remove('open');
+$('svx').onclick=()=>openSave('export');$('svi').onclick=()=>openSave('import');$('svc').onclick=closeSave;
+$('svok').onclick=async()=>{
+  if(svMode==='export'){const ta=$('sva');ta.select();let ok=false;
+    try{await navigator.clipboard.writeText(ta.value);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(e2){}}
+    $('sve').style.color=ok?'#7dffb0':'#ffb347';$('sve').textContent=ok?'✔ Code copié !':'Sélectionne le code et copie-le à la main.';return}
+  let R;try{R=parseSave($('sva').value)}catch(e){$('sve').style.color='#ff7d93';$('sve').textContent=e.message||'Code invalide.';return}
+  const info=`Éclats cumulés : <b>${fmt(R.maxTotal)}</b><br>✦ ${R.eternity} · 💠 ${Math.floor(R.gems)} · ${Object.keys(R.ach).length} succès`;
+  if(await ask('Remplacer ta partie ?',info+'<br><br>Ta partie actuelle sera remplacée.','Importer',true)){
+    noSave=true;try{localStorage.setItem(KEY+'_backup',JSON.stringify(S));localStorage.setItem(KEY,JSON.stringify(R))}catch(e){}
+    location.reload()}
+};
+
+// ---------- Tutoriel ----------
+const seen={};
+const TUTO=[
+ {el:'gem',hl:'hlg',pos:'above',txt:()=>'👆 Tape sur le cristal pour récolter des éclats !',done:()=>S.clicks>=5},
+ {el:'u_tap',pos:'above',txt:()=>S.score<40?'Continue de taper : il te faut <b>40 éclats</b> pour le Doigt de lumière.':'Bravo ! Achète le <b>Doigt de lumière</b> : +1 éclat à chaque clic.',done:()=>S.lv.tap>=1},
+ {el:'u_spr',pos:'above',txt:()=>S.score<120?'Continue : il te faut <b>120 éclats</b> pour une Étincelle.':'Achète une <b>Étincelle</b> : elle produit des éclats toute seule, même quand tu fermes le jeu.',done:()=>S.lv.spr>=1},
+ {el:'t2',pos:'above',txt:()=>'🛍️ Ouvre la <b>Boutique</b> : styles de cristal, décors et boosts.',done:()=>seen.t2},
+ {el:'t3',pos:'above',txt:()=>'🏆 Les <b>succès</b> te donnent des gemmes 💠 et un bonus de production.',done:()=>seen.t3},
+ {el:'gear',pos:'below',txt:()=>'⚙️ Ici : renaissance, sons et <b>sauvegarde</b> de ta partie.',done:()=>seen.gear},
+];
+let tutoEl=null;
+function tutoClear(){if(tutoEl){tutoEl.classList.remove('hl','hlg');tutoEl=null}$('tuto').style.display='none'}
+function tutoTick(){
+  const box=$('tuto');
+  if(S.tuto>=TUTO.length){if(S.tuto!==99){S.tuto=99;save();tutoClear();toast('🎓 <b>Tutoriel terminé !</b><br>Bon jeu !',3000)}else tutoClear();return}
+  const st=TUTO[S.tuto];
+  if(st.done()){S.tuto++;save();tutoClear();return}
+  const el=$(st.el);
+  if(setOpen||$('svm').classList.contains('open')||!el||el.getBoundingClientRect().width===0){tutoClear();return}
+  if(tutoEl!==el){tutoClear();tutoEl=el;el.classList.add(st.hl||'hl')}
+  const t=st.txt();if(box.dataset.k!==t){box.dataset.k=t;$('tt').innerHTML=t}
+  box.style.display='block';
+  const r=el.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight;
+  const x=Math.max(10,Math.min(innerWidth-bw-10,r.left+r.width/2-bw/2));
+  let y=st.pos==='above'?r.top-bh-10:r.bottom+10;
+  if(y<8)y=r.bottom+10;if(y+bh>innerHeight-8)y=Math.max(8,r.top-bh-10);
+  box.style.left=x+'px';box.style.top=y+'px';
+}
+$('t2').addEventListener('click',()=>seen.t2=1);$('t3').addEventListener('click',()=>seen.t3=1);$('gear').addEventListener('click',()=>seen.gear=1);
+$('tskip').onclick=()=>{S.tuto=99;save();tutoClear()};
+$('tutoR').onclick=()=>{S.tuto=0;for(const k in seen)delete seen[k];save();closeSet();tab(1)};
+
 applyStyle();render();
-window.__ee={S,checkAch,spawnGold,startRain,applyStyle};
+window.__ee={S,checkAch,spawnGold,startRain,applyStyle,exportSave,parseSave,sanitizeSave};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>

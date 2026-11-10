@@ -21,3 +21,7 @@ Contrôles : glisser (tactile/souris) ou flèches ←/→.
 Engrenage ⚙️ en haut à droite : Renaissance (avec aperçu du gain), sons, vibrations, statistiques de la partie, effacement de la progression (double confirmation) et lien vers la politique de confidentialité.
 
 _Version courante : 1.1_
+
+## Sauvegarde et tutoriel
+- ⚙️ → Sauvegarde : exporte un code (avec contrôle d'intégrité) et réimporte-le sur un autre appareil. Le code importé est validé et nettoyé ; une copie de secours de la partie remplacée est conservée.
+- Un tutoriel guidé accompagne les nouveaux joueurs (ignorable, rejouable depuis les paramètres).
