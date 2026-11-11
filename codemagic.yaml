@@ -1,0 +1,39 @@
+# Compilation iOS dans le cloud (Codemagic) → envoi automatique vers TestFlight.
+# ⚠️ Modèle préparé sans pouvoir le tester ici (il faut un Mac et un compte Apple) : le premier build
+#    peut demander un petit ajustement. Guide pas à pas : docs/PUBLIER-IOS.md
+workflows:
+  ios-testflight:
+    name: Éclats Éternels - iOS (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: codemagic   # nom exact donné à la clé API dans Codemagic (Teams > Integrations)
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.eclatseternels.game
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Installer les dépendances
+        script: npm ci
+      - name: Construire le jeu web et synchroniser Capacitor
+        script: npm run sync
+      - name: Appliquer la signature (certificat et profil gérés automatiquement)
+        script: xcode-project use-profiles
+      - name: Numéro de build automatique
+        script: |
+          # chaque build Codemagic a un numéro croissant : Apple exige un numéro différent à chaque envoi
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $PROJECT_BUILD_NUMBER;/" ios/App/App.xcodeproj/project.pbxproj
+      - name: Compiler l'application (.ipa)
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
