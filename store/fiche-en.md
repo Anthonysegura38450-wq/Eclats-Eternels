@@ -15,8 +15,9 @@ Tap the crystal to harvest shards, then invest them in upgrades that work for yo
 • Bulk upgrades: buy x1, x5, x10, x100 or the max in one tap.
 • Shop: crystal styles (Ruby, Emerald, Pure Gold, Ice, Obsidian, Rainbow…), backdrops, Frenzy boosts and permanent bonuses.
 • Achievements: 20+ goals to unlock, each one boosts your production.
-• Special events: catch the golden crystal, star showers, a ×10 boost at every shard milestone, a 7-day daily reward, glowing weekends.
-• Rebirth: start over with eternal bonuses and go further every time.
+• Special events: catch the golden crystal, showers to collect, a ×10 boost at every shard milestone, a 7-day daily reward, glowing weekends.
+• Seasonal fun: at Halloween, Christmas, New Year, Valentine's Day and Easter, the crystal dresses up (Santa hat, Easter egg…) and the in-game events change theme: snowflake showers, golden gifts, rain of hearts…
+• Rebirth: start over with eternal bonuses. With each rebirth your crystal becomes a new precious stone: Diamond, Ruby, Emerald, Sapphire, Amethyst, Topaz, Opal, Pearl.
 • Free gems: earn them by playing and trade them for Prisms.
 
 100% free. No ads. No in-app purchases. No data collected. Works offline.
