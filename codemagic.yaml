@@ -36,4 +36,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Test interne uniquement : le build est envoyé et traité, sans soumission au test externe
+        # (qui exigerait des informations de contact « bêta » et une vérification Apple).
+        submit_to_testflight: false
