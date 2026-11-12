@@ -28,7 +28,7 @@ _Dernière mise à jour : 11 novembre 2026. Branche de travail : `claude/lucid-g
    - Coordonnées de contact (prénom, nom, téléphone, e-mail) ;
    - Remarques pour la vérification : texte dans `store/notes-validation.md` ;
    - Mode de publication : « manuellement » conseillé pour une première version ;
-   - **Captures d'écran** iPhone 6,9″ : dossier `store/captures-iphone-6.9/` ;
+   - **Captures d'écran** iPhone 6,9″ : dossier `store/captures-iphone-6.3/ (1206 × 2622, iPhone « écran moyen »)` ;
    - Associer le **dernier build** (bouton « Ajouter une build »).
 5. **À vérifier (non confirmé)** : la déclaration « législation sur les services numériques » (Informations sur l'app → Configurer). Sans elle, l'app peut ne pas être disponible dans l'UE. C'est une déclaration légale personnelle (professionnel / non-professionnel).
 6. **Ajouter pour vérification**.

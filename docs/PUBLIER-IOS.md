@@ -9,7 +9,7 @@
 | Compilation cloud (Codemagic) | `codemagic.yaml` |
 | Icône 1024×1024 sans transparence + écran de lancement | `ios/App/App/Assets.xcassets/` (sources : `icon-1024.png`, `splash-2732.png`) |
 | Retours haptiques natifs, portrait uniquement, chiffrement déclaré « standard » | `index.html`, `ios/App/App/Info.plist` |
-| Captures d'écran 6,9" (1320×2868) | `store/captures-iphone-6.9/` |
+| Captures d'écran 6,9" (1320×2868) | `store/captures-iphone-6.3/ (1206 × 2622, iPhone « écran moyen »)` |
 | Textes de la fiche (FR + EN) et notes pour la validation | `store/` |
 | Politique de confidentialité et page d'assistance | `privacy.html`, `support.html` (publiées via GitHub Pages) |
 
@@ -64,7 +64,7 @@ Dans Xcode : projet **App** → *Signing & Capabilities* → *Team* = ton compte
 ## Fiche App Store et soumission
 1. Dans App Store Connect → ton app → **iOS App → 1.0 Prepare for Submission**.
 2. Colle les textes de `store/fiche-fr.md` (et `fiche-en.md` pour l'anglais).
-3. Envoie les captures de `store/captures-iphone-6.9/` (**iPhone seulement** : l'app est réglée sur iPhone, aucune capture iPad n'est demandée).
+3. Envoie les captures de `store/captures-iphone-6.3/ (1206 × 2622, iPhone « écran moyen »)` (**iPhone seulement** : l'app est réglée sur iPhone, aucune capture iPad n'est demandée).
 4. URL de confidentialité et d'assistance : voir `store/fiche-fr.md`.
 5. **App Privacy** : « Data Not Collected » · **Age Rating** : 4+ · pas de publicité, pas d'achat intégré (voir `store/notes-validation.md`).
 6. Choisis la build TestFlight, remplis les notes pour la validation, puis **Add for Review → Submit**.
