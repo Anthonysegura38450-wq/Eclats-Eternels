@@ -8,7 +8,14 @@ _Dernière mise à jour : 12 novembre 2026. Branche de travail : `claude/lucid-g
 - Gemmes 100 % gratuites. **Aucun paiement** (pas de statut d'entreprise).
 - Aperçu des fêtes réservé au développement local (`?season=noel` sur localhost).
 
-## Application iOS : **soumise à Apple le 12 novembre 2026 à 10 h 09**
+## ⚠️ 17 nov. 2026 : Apple demande des informations (Guideline 2.1, « Information Needed »)
+Ce n'est pas un bug. À faire, dans l'ordre :
+1. **Retirer la Chine continentale (et le Viêt Nam)** de la disponibilité : Tarifs et disponibilité → Gérer. Sinon la soumission est bloquée (évaluation de sécurité chinoise).
+2. **Filmer l'écran de l'iPhone** (60 à 90 s, en partant du lancement de l'app) et le joindre dans « Pièce jointe ».
+3. Coller le texte de `store/notes-validation.md` dans **Remarques**.
+4. Cliquer sur **Mettre à jour la vérification** (renvoi).
+
+## Application iOS : soumise à Apple le 12 novembre 2026 à 10 h 09
 - État : **« En attente de vérification »** (iOS App 1.0, build 3). Délai habituel : 1 à 3 jours.
 - Tout est fait : compte développeur, app et fiche App Store Connect, confidentialité (aucune donnée collectée), âge 4+, gratuit, déclaration sur les services numériques, 7 captures d'écran (1206 × 2622), compilation Codemagic (sans Mac), test sur iPhone via TestFlight (build 3 validé).
 - La soumission peut être annulée depuis la page « Soumission iOS » tant que l'app n'est pas approuvée.
