@@ -15,6 +15,9 @@ Ce n'est pas un bug. À faire, dans l'ordre :
 3. Coller le texte de `store/notes-validation.md` dans **Remarques**.
 4. Cliquer sur **Mettre à jour la vérification** (renvoi).
 
+## Écran de lancement iOS (18 nov. 2026)
+Cause réelle du « pas d'écran de lancement » : le plugin `@capacitor/splash-screen` n'était pas installé, donc iOS retirait l'écran presque instantanément. Ajouté (affichage 1,8 s + fondu 0,4 s). **À valider avec le build 4** (pas testé sur iPhone).
+
 ## Application iOS : soumise à Apple le 12 novembre 2026 à 10 h 09
 - État : **« En attente de vérification »** (iOS App 1.0, build 3). Délai habituel : 1 à 3 jours.
 - Tout est fait : compte développeur, app et fiche App Store Connect, confidentialité (aucune donnée collectée), âge 4+, gratuit, déclaration sur les services numériques, 7 captures d'écran (1206 × 2622), compilation Codemagic (sans Mac), test sur iPhone via TestFlight (build 3 validé).

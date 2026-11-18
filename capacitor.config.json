@@ -6,5 +6,16 @@
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#0b0820"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1800,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 400,
+      "backgroundColor": "#0b0820",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
   }
 }
